@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import openpyxl
 import random
+from time import sleep
 
 
 class Game:
@@ -175,7 +176,7 @@ class Game:
         params = ["A", "A", "B", "B", "C", "C", "D", "D"]
         for i in range(8):
             self.canvas.tag_bind(buttons[i], "<ButtonRelease-1>",
-                                 lambda event, param1=params[i]: self.clickAnswer(event, param1))
+                                 lambda event, param1=params[i]: self.click_answer(event, param1))
             self.canvas.tag_bind(buttons[i], "<Enter>",
                                  lambda event, param1=params[i]: self.on_hover(event, param1))
             self.canvas.tag_bind(buttons[i], "<Leave>",
@@ -196,19 +197,113 @@ class Game:
             for a in actions:
                 self.canvas.tag_unbind(b, a)
 
+    def reset_buttons(self):
+        self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_button_B, outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_button_A_text, fill="orange")
+        self.canvas.itemconfig(self.question_button_B_text, fill="orange")
+        self.canvas.itemconfig(self.question_button_C_text, fill="orange")
+        self.canvas.itemconfig(self.question_button_D_text, fill="orange")
+
+    def reset_attributes(self):
+        self.current_question = None
+        self.currently_clicked = None
+
     def printTest(self, event):
         print("działa")
 
-    def checkAnswer(self, answer):
-        print(f"Sprawdzam {answer}")
+    def next_question(self):
+        if self.current_question_number < 15:
+            self.reset_attributes()
+            self.reset_buttons()
+            self.bind_buttons()
+            self.update_after_answer()
+            self.load_new_question()
+        else:
+            print("Gratulację - wygrałeś MILION")
 
-    def clickAnswer(self, event, answer):
+    def show_answer(self, answer):
+        correct_answer = self.current_question.correct_answer
+        correct_button = None
+        correct_button_text = None
+
+        if correct_answer == "A":
+            correct_button = self.question_button_A
+            correct_button_text = self.question_button_A_text
+        elif correct_answer == "B":
+            correct_button = self.question_button_B
+            correct_button_text = self.question_button_B_text
+        elif correct_answer == "C":
+            correct_button = self.question_button_C
+            correct_button_text = self.question_button_C_text
+        elif correct_answer == "D":
+            correct_button = self.question_button_D
+            correct_button_text = self.question_button_D_text
+        else:
+            print(f"Odpowiedzia powinno byc A, B, C, lub D, a nie: {correct_answer}")
+
+        if answer == "A":
+            if answer == correct_answer:
+                self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#00FF00')
+                self.root.after(3000, lambda: self.next_question())
+            else:
+                self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#FB1111')
+                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
+                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
+                self.root.after(5000, lambda: self.end_game())
+        elif answer == "B":
+            if answer == correct_answer:
+                self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#00FF00')
+                self.root.after(3000, lambda: self.next_question())
+            else:
+                self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#FB1111')
+                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
+                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
+                self.root.after(5000, lambda: self.end_game())
+        elif answer == "C":
+            if answer == correct_answer:
+                self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#00FF00')
+                self.root.after(3000, lambda: self.next_question())
+            else:
+                self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#FB1111')
+                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
+                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
+                self.root.after(5000, lambda: self.end_game())
+        elif answer == "D":
+            if answer == correct_answer:
+                self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#00FF00')
+                self.root.after(3000, lambda: self.next_question())
+            else:
+                self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#FB1111')
+                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
+                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
+                self.root.after(5000, lambda: self.end_game())
+        else:
+            print(f"Odpowiedzia powinno byc A, B, C, lub D, a nie: {answer}")
+
+    def check_answer(self, answer):
+        print(f"Sprawdzam {answer}")
+        if self.current_question_number in [0, 1, 2, 3]:
+            self.root.after(2000, lambda: self.show_answer(answer))
+        elif self.current_question_number in [5, 6, 7, 8]:
+            self.root.after(3000, lambda: self.show_answer(answer))
+        elif self.current_question_number in [10, 11, 12, 13]:
+            self.root.after(4000, lambda: self.show_answer(answer))
+        elif self.current_question_number in [4, 9, 14]:
+            self.root.after(6000, lambda: self.show_answer(answer))
+        else:
+            print("Bledny numer pytania")
+
+    def click_answer(self, event, answer):
         if answer == "A":
             if self.currently_clicked == "A":
                 self.unbind_all()
                 self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#F75B11')
-                self.canvas.itemconfig(self.question_button_A_text, fill='#ffffff')
-                self.checkAnswer(answer)
+                self.canvas.itemconfig(self.question_button_A_text, fill='#FFFFFF')
+                self.check_answer(answer)
             else:
                 self.currently_clicked = "A"
                 self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#4D5CDC')
@@ -248,7 +343,7 @@ class Game:
                 self.unbind_all()
                 self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#F75B11')
                 self.canvas.itemconfig(self.question_button_B_text, fill='#ffffff')
-                self.checkAnswer(answer)
+                self.check_answer(answer)
             else:
                 self.currently_clicked = "B"
                 self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#4D5CDC')
@@ -288,7 +383,7 @@ class Game:
                 self.unbind_all()
                 self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#F75B11')
                 self.canvas.itemconfig(self.question_button_C_text, fill='#ffffff')
-                self.checkAnswer(answer)
+                self.check_answer(answer)
             else:
                 self.currently_clicked = "C"
                 self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#4D5CDC')
@@ -328,7 +423,7 @@ class Game:
                 self.unbind_all()
                 self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#F75B11')
                 self.canvas.itemconfig(self.question_button_D_text, fill='#ffffff')
-                self.checkAnswer(answer)
+                self.check_answer(answer)
             else:
                 self.currently_clicked = "D"
                 self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#4D5CDC')
@@ -380,8 +475,8 @@ class Game:
         y2 = self.canvas.winfo_screenheight() * 19 / 20 + start_button_height / 2
         y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20
 
-        prize_values = [0, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000, 40000, 75000, 125000, 250000, 500000,
-                        1000000]
+        prize_values = ["0 zł", "100 zł", "200 zł", "300 zł", "500 zł", "1000 zł", "2000 zł", "5000 zł", "10 000 zł", "20 000 zł", "40 000 zł", "75 000 zł", "125 000 zł", "250 000 zł", "500 000 zł",
+                        "1 000 000 zł"]
         text_colors = ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"]
 
         for prize_value, text_color in zip(prize_values, text_colors):
@@ -403,6 +498,7 @@ class Game:
             self.current_question_number = self.current_question_number + 1
             print(self.current_question_number)
             self.current_money = self.question_prize_list[self.current_question_number]
+            print(f"Masz aktualnie: {self.current_money}")
             if self.current_money in self.guaranteed_list:
                 self.guaranteed = self.current_money
             self.update_prize_buttons()
@@ -410,16 +506,20 @@ class Game:
             # print(f"Current money: {self.current_money}")
             # print(f"Guaranteed: {self.guaranteed}")
         else:
-            self.end_game()
+            self.root.after(5000, lambda: self.end_game())
 
     def update_prize_buttons(self):
         for i in range(len(self.prize_button_list)):
             self.canvas.itemconfig(self.prize_button_list[i], outline='#080E43', fill='#4D5CDC')
-        self.canvas.itemconfig(self.prize_button_list[self.current_question_number], outline='#080E43', fill='yellow')
+        for i in range(self.current_question_number + 1):
+            self.canvas.itemconfig(self.prize_button_list[i], outline='#080E43', fill='#00FF00')
+        self.canvas.itemconfig(self.prize_button_list[self.current_question_number + 1], outline='#080E43', fill='yellow')
 
     def load_new_question(self):
         prize = self.question_prize_list[self.current_question_number + 1]
+        print(prize)
         self.current_question = self.pick_random_question(prize)
+        # self.add_to_already_asked(self.current_question)
         print("New question loaded")
         self.canvas.itemconfigure(self.question_button_Q_text, text=self.current_question.question)
         self.canvas.itemconfigure(self.question_button_A_text, text=self.current_question.answer_A)
@@ -430,7 +530,8 @@ class Game:
 
     def pick_random_question(self, prize):
         result = [q for q in self.question_list if q.prize == prize]
-        print(random.sample(result, 1)[0].question)
+        #print(result)
+        #print(random.sample(result, 1)[0].question)
         return random.sample(result, 1)[0]
 
     def read_questions(self):
@@ -476,8 +577,6 @@ class Game:
             self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
         else:
             print("Bad argument - button")
-
-            # TODO DO PRZETESTOWANIA
 
 
 class Question:
