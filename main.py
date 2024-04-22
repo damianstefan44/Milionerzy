@@ -1,10 +1,40 @@
+import textwrap
 import tkinter as tk
 from PIL import ImageTk, Image
 import pandas as pd
 import numpy as np
 import openpyxl
 import random
-from time import sleep
+
+
+def cut_question(question, width=20):
+    # Split the question into lines
+    lines = question.split('\n')
+
+    # Cut each line to fit within the specified width
+    cut_lines = []
+    for line in lines:
+        if len(line) <= width:
+            cut_lines.append(line)
+        else:
+            # Split the line into words
+            words = line.split()
+
+            # Cut the line into lines of the specified width
+            cut_line = ''
+            for word in words:
+                if len(cut_line) + len(word) + 1 <= width:
+                    cut_line += word + ' '
+                else:
+                    cut_lines.append(cut_line.strip())
+                    cut_line = word + ' '
+
+            # Add the remaining line
+            if cut_line.strip():
+                cut_lines.append(cut_line.strip())
+
+    # Join the cut lines back into a single string
+    return '\n'.join(cut_lines)
 
 
 class Game:
@@ -31,12 +61,16 @@ class Game:
 
         self.question_button_A = None
         self.question_button_A_text = None
+        self.A_text = None
         self.question_button_B = None
         self.question_button_B_text = None
+        self.B_text = None
         self.question_button_C = None
         self.question_button_C_text = None
+        self.C_text = None
         self.question_button_D = None
         self.question_button_D_text = None
+        self.D_text = None
         self.question_button_Q = None
         self.question_button_Q_text = None
 
@@ -96,6 +130,9 @@ class Game:
         start_button_height = 80
         start_button_edge = 40
         padding = 5
+        answer_text_padding = 5
+        to_left = 130
+        left_padding = 20
 
         x1 = self.canvas.winfo_screenwidth() / 100 * 37.5 - start_button_width / 2
         x2 = self.canvas.winfo_screenwidth() / 100 * 37.5 + start_button_width / 2
@@ -114,10 +151,16 @@ class Game:
 
         self.question_button_A = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_A_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
+        self.question_button_A_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
                                                               text="A",
                                                               font='Helvetica 10 bold',
-                                                              fill="orange")
+                                                              fill="white",
+                                                              anchor='w')
+        self.A_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+                                                              text="A:",
+                                                              font='Helvetica 16 bold',
+                                                              fill="orange",
+                                                              anchor='w')
 
         x1 += (start_button_width + padding + 2 * start_button_edge)
         x2 += (start_button_width + padding + 2 * start_button_edge)
@@ -137,35 +180,56 @@ class Game:
         self.question_button_Q_text = self.canvas.create_text((qx1 + qx6) / 2, qy2,
                                                               text="",
                                                               font='Helvetica 12 bold',
-                                                              fill="orange")
+                                                              fill="white",
+                                                              anchor='center',
+                                                              justify='center')
 
         self.question_button_B = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_B_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
+        self.question_button_B_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
                                                               text="B",
                                                               font='Helvetica 10 bold',
-                                                              fill="orange")
+                                                              fill="white",
+                                                              anchor='w')
+        self.B_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+                                              text="B:",
+                                              font='Helvetica 16 bold',
+                                              fill="orange",
+                                              anchor='w')
         y1 += (start_button_height + padding)
         y2 += (start_button_height + padding)
         y3 += (start_button_height + padding)
         y4 += (start_button_height + padding)
         self.question_button_D = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_D_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
+        self.question_button_D_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
                                                               text="D",
                                                               font='Helvetica 10 bold',
-                                                              fill="orange")
+                                                              fill="white",
+                                                              anchor='w')
+        self.D_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+                                              text="D:",
+                                              font='Helvetica 16 bold',
+                                              fill="orange",
+                                              anchor='w')
 
         x1 -= (start_button_width + padding + 2 * start_button_edge)
         x2 -= (start_button_width + padding + 2 * start_button_edge)
         x3 -= (start_button_width + padding + 2 * start_button_edge)
         x4 -= (start_button_width + padding + 2 * start_button_edge)
+
         self.question_button_C = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_C_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
+        self.question_button_C_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
                                                               text="C",
                                                               font='Helvetica 10 bold',
-                                                              fill="orange")
+                                                              fill="white",
+                                                              anchor='w')
+        self.C_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+                                              text="C:",
+                                              font='Helvetica 16 bold',
+                                              fill="orange",
+                                              anchor='w')
         self.bind_buttons()
 
     def bind_buttons(self):
@@ -203,10 +267,10 @@ class Game:
         self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
         self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
         self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
-        self.canvas.itemconfig(self.question_button_A_text, fill="orange")
-        self.canvas.itemconfig(self.question_button_B_text, fill="orange")
-        self.canvas.itemconfig(self.question_button_C_text, fill="orange")
-        self.canvas.itemconfig(self.question_button_D_text, fill="orange")
+        self.canvas.itemconfig(self.question_button_A_text, fill="white")
+        self.canvas.itemconfig(self.question_button_B_text, fill="white")
+        self.canvas.itemconfig(self.question_button_C_text, fill="white")
+        self.canvas.itemconfig(self.question_button_D_text, fill="white")
 
     def reset_attributes(self):
         self.current_question = None
@@ -475,7 +539,8 @@ class Game:
         y2 = self.canvas.winfo_screenheight() * 19 / 20 + start_button_height / 2
         y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20
 
-        prize_values = ["0 zł", "100 zł", "200 zł", "300 zł", "500 zł", "1000 zł", "2000 zł", "5000 zł", "10 000 zł", "20 000 zł", "40 000 zł", "75 000 zł", "125 000 zł", "250 000 zł", "500 000 zł",
+        prize_values = ["0 zł", "100 zł", "200 zł", "300 zł", "500 zł", "1000 zł", "2000 zł", "5000 zł", "10 000 zł",
+                        "20 000 zł", "40 000 zł", "75 000 zł", "125 000 zł", "250 000 zł", "500 000 zł",
                         "1 000 000 zł"]
         text_colors = ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"]
 
@@ -513,7 +578,8 @@ class Game:
             self.canvas.itemconfig(self.prize_button_list[i], outline='#080E43', fill='#4D5CDC')
         for i in range(self.current_question_number + 1):
             self.canvas.itemconfig(self.prize_button_list[i], outline='#080E43', fill='#00FF00')
-        self.canvas.itemconfig(self.prize_button_list[self.current_question_number + 1], outline='#080E43', fill='yellow')
+        self.canvas.itemconfig(self.prize_button_list[self.current_question_number + 1], outline='#080E43',
+                               fill='yellow')
 
     def load_new_question(self):
         prize = self.question_prize_list[self.current_question_number + 1]
@@ -521,17 +587,25 @@ class Game:
         self.current_question = self.pick_random_question(prize)
         # self.add_to_already_asked(self.current_question)
         print("New question loaded")
-        self.canvas.itemconfigure(self.question_button_Q_text, text=self.current_question.question)
-        self.canvas.itemconfigure(self.question_button_A_text, text=self.current_question.answer_A)
-        self.canvas.itemconfigure(self.question_button_B_text, text=self.current_question.answer_B)
-        self.canvas.itemconfigure(self.question_button_C_text, text=self.current_question.answer_C)
-        self.canvas.itemconfigure(self.question_button_D_text, text=self.current_question.answer_D)
+
+
+        self.canvas.itemconfigure(self.question_button_Q_text,
+                                  text=cut_question(f"{self.current_question.question}", width=85))
+        self.canvas.itemconfigure(self.question_button_A_text,
+                                  text=cut_question(f"{self.current_question.answer_A}", width=38))
+        self.canvas.itemconfigure(self.question_button_B_text,
+                                  text=cut_question(f"{self.current_question.answer_B}", width=38))
+        self.canvas.itemconfigure(self.question_button_C_text,
+                                  text=cut_question(f"{self.current_question.answer_C}", width=38))
+        self.canvas.itemconfigure(self.question_button_D_text,
+                                  text=cut_question(f"{self.current_question.answer_D}", width=38))
+
         print(self.current_question.question)
 
     def pick_random_question(self, prize):
         result = [q for q in self.question_list if q.prize == prize]
-        #print(result)
-        #print(random.sample(result, 1)[0].question)
+        # print(result)
+        # print(random.sample(result, 1)[0].question)
         return random.sample(result, 1)[0]
 
     def read_questions(self):
