@@ -44,6 +44,17 @@ class Game:
         self.menu_frame = menu_frame
         self.game_frame = None
         self.background_image = None
+        self.option_menu = None
+        self.lifeline_specialist_image = None
+        self.lifeline_specialist = None
+        self.lifeline_50_image = None
+        self.lifeline_50 = None
+        self.lifeline_phone_image = None
+        self.lifeline_phone = None
+        self.lifeline_swap_image = None
+        self.lifeline_swap = None
+        self.lifeline_exit_image = None
+        self.lifeline_exit = None
         self.canvas = None
         self.prize_button_list = []
         self.prize_button_text_list = []
@@ -80,12 +91,42 @@ class Game:
 
     def start(self):
         self.menu_frame.pack_forget()
-
         self.init_canvas()  # Initialize canvas
         self.init_buttons()  # Initialize buttons
+        self.game_frame.update()
+        self.game_frame.update_idletasks()
 
-        self.game_frame = tk.Frame(self.canvas, background="#080E43")
-        self.game_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    def printTest(self):
+        print("działa")
+
+    def create_black_rectangle(self, width):
+        rectangle = self.canvas.create_rectangle(0, 0, width, self.canvas.winfo_screenheight(), fill="#06070C")
+        self.option_menu = rectangle
+
+    def put_image_in_object(self, image_path, object_label, x, y):
+        image = Image.open(image_path)
+        resized_image = image.resize((146, 101))
+        lifeline_image = ImageTk.PhotoImage(resized_image)
+        lifeline = self.canvas.create_image(x, y,
+                                            anchor=tk.NW,
+                                            image=lifeline_image)
+        if object_label == "specialist":
+            self.lifeline_specialist_image = lifeline_image
+            self.lifeline_specialist = lifeline
+        elif object_label == "50":
+            self.lifeline_50_image = lifeline_image
+            self.lifeline_50 = lifeline
+        elif object_label == "phone":
+            self.lifeline_phone_image = lifeline_image
+            self.lifeline_phone = lifeline
+        elif object_label == "swap":
+            self.lifeline_swap_image = lifeline_image
+            self.lifeline_swap = lifeline
+        elif object_label == "exit":
+            self.lifeline_exit_image = lifeline_image
+            self.lifeline_exit = lifeline
+        else:
+            print("Bad argument - object_label")
 
     def init_canvas(self):
         self.canvas = tk.Canvas(self.root,
@@ -101,6 +142,181 @@ class Game:
         self.canvas.create_image(0, 0,
                                  anchor=tk.NW,
                                  image=self.background_image)
+        self.create_black_rectangle(200)
+
+        start_position = 50
+        padding = self.root.winfo_screenheight() / 6
+
+        self.put_image_in_object("photos/lifeline_specialist_black.png", "specialist", 25, start_position)
+        self.put_image_in_object("photos/lifeline_50_black.png", "50", 25, start_position + padding)
+        self.put_image_in_object("photos/lifeline_phone_black.png", "phone", 25, start_position + 2 * padding)
+        self.put_image_in_object("photos/lifeline_swap_black.png", "swap", 25, start_position + 3 * padding)
+        self.put_image_in_object("photos/lifeline_exit_black.png", "exit", 25,
+                                 self.root.winfo_screenheight() - 3 * start_position)
+
+        self.game_frame = tk.Frame(self.canvas, background="#080E43")
+        self.game_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        self.canvas.tag_bind(self.lifeline_specialist, "<Double-Button-1>",
+                             lambda event: self.on_lifeline_click(event, "specialist"))
+        self.canvas.tag_bind(self.lifeline_specialist, "<Enter>",
+                             lambda event: self.on_lifeline_hover(event, "specialist"))
+        self.canvas.tag_bind(self.lifeline_specialist, "<Leave>",
+                             lambda event: self.on_lifeline_stop_hover(event, "specialist"))
+        self.canvas.tag_bind(self.lifeline_50, "<Double-Button-1>",
+                             lambda event: self.on_lifeline_click(event, "50"))
+        self.canvas.tag_bind(self.lifeline_50, "<Enter>",
+                             lambda event: self.on_lifeline_hover(event, "50"))
+        self.canvas.tag_bind(self.lifeline_50, "<Leave>",
+                             lambda event: self.on_lifeline_stop_hover(event, "50"))
+        self.canvas.tag_bind(self.lifeline_phone, "<Double-Button-1>",
+                             lambda event: self.on_lifeline_click(event, "phone"))
+        self.canvas.tag_bind(self.lifeline_phone, "<Enter>",
+                             lambda event: self.on_lifeline_hover(event, "phone"))
+        self.canvas.tag_bind(self.lifeline_phone, "<Leave>",
+                             lambda event: self.on_lifeline_stop_hover(event, "phone"))
+        self.canvas.tag_bind(self.lifeline_swap, "<Double-Button-1>",
+                             lambda event: self.on_lifeline_click(event, "swap"))
+        self.canvas.tag_bind(self.lifeline_swap, "<Enter>",
+                             lambda event: self.on_lifeline_hover(event, "swap"))
+        self.canvas.tag_bind(self.lifeline_swap, "<Leave>",
+                             lambda event: self.on_lifeline_stop_hover(event, "swap"))
+        self.canvas.tag_bind(self.lifeline_exit, "<Double-Button-1>",
+                             lambda event: self.on_lifeline_click(event, "exit"))
+        self.canvas.tag_bind(self.lifeline_exit, "<Enter>",
+                             lambda event: self.on_lifeline_hover(event, "exit"))
+        self.canvas.tag_bind(self.lifeline_exit, "<Leave>",
+                             lambda event: self.on_lifeline_stop_hover(event, "exit"))
+
+    def on_lifeline_hover(self, event, lifeline):
+        if lifeline == "specialist":
+            image = Image.open("photos/lifeline_specialist_blue.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_specialist, image=lifeline_image)
+            self.lifeline_specialist_image = lifeline_image
+        elif lifeline == "50":
+            image = Image.open("photos/lifeline_50_blue.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_50, image=lifeline_image)
+            self.lifeline_50_image = lifeline_image
+        elif lifeline == "phone":
+            image = Image.open("photos/lifeline_phone_blue.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_phone, image=lifeline_image)
+            self.lifeline_phone_image = lifeline_image
+        elif lifeline == "swap":
+            image = Image.open("photos/lifeline_swap_blue.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_swap, image=lifeline_image)
+            self.lifeline_swap_image = lifeline_image
+        elif lifeline == "exit":
+            image = Image.open("photos/lifeline_exit_blue.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_exit, image=lifeline_image)
+            self.lifeline_exit_image = lifeline_image
+        else:
+            print("Bad argument - lifeline - on_lifeline_hover")
+
+    def on_lifeline_stop_hover(self, event, lifeline):
+        if lifeline == "specialist":
+            image = Image.open("photos/lifeline_specialist_black.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_specialist, image=lifeline_image)
+            self.lifeline_specialist_image = lifeline_image
+        elif lifeline == "50":
+            image = Image.open("photos/lifeline_50_black.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_50, image=lifeline_image)
+            self.lifeline_50_image = lifeline_image
+        elif lifeline == "phone":
+            image = Image.open("photos/lifeline_phone_black.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_phone, image=lifeline_image)
+            self.lifeline_phone_image = lifeline_image
+        elif lifeline == "swap":
+            image = Image.open("photos/lifeline_swap_black.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_swap, image=lifeline_image)
+            self.lifeline_swap_image = lifeline_image
+        elif lifeline == "exit":
+            image = Image.open("photos/lifeline_exit_black.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_exit, image=lifeline_image)
+            self.lifeline_exit_image = lifeline_image
+        else:
+            print("Bad argument - lifeline - on_lifeline_stop_hover")
+
+    def on_lifeline_click(self, event, lifeline):
+        if lifeline == "specialist":
+            image = Image.open("photos/lifeline_specialist_red.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_specialist, image=lifeline_image)
+            self.lifeline_specialist_image = lifeline_image
+            self.unbind_button(self.lifeline_specialist)
+        elif lifeline == "50":
+            image = Image.open("photos/lifeline_50_red.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_50, image=lifeline_image)
+            self.lifeline_50_image = lifeline_image
+            self.unbind_button(self.lifeline_50)
+            self.fifty_fifty()
+        elif lifeline == "phone":
+            image = Image.open("photos/lifeline_phone_red.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_phone, image=lifeline_image)
+            self.lifeline_phone_image = lifeline_image
+            self.unbind_button(self.lifeline_phone)
+        elif lifeline == "swap":
+            image = Image.open("photos/lifeline_swap_red.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_swap, image=lifeline_image)
+            self.lifeline_swap_image = lifeline_image
+            self.unbind_button(self.lifeline_swap)
+            self.root.after(1000, lambda: self.swap_question())
+        elif lifeline == "exit":
+            image = Image.open("photos/lifeline_exit_red.png")
+            resized_image = image.resize((146, 101))
+            lifeline_image = ImageTk.PhotoImage(resized_image)
+            self.canvas.itemconfig(self.lifeline_exit, image=lifeline_image)
+            self.lifeline_exit_image = lifeline_image
+            self.unbind_button(self.lifeline_exit)
+            self.root.after(1000, lambda: self.end_game())
+        else:
+            print("Bad argument - lifeline - on_lifeline_hover")
+
+    def fifty_fifty(self):
+        answers = ["A", "B", "C", "D"]
+        answers_text_dict = {"A": self.question_button_A_text, "B": self.question_button_B_text,
+                             "C": self.question_button_C_text, "D": self.question_button_D_text}
+        answers_dict = {"A": self.question_button_A, "B": self.question_button_B,
+                        "C": self.question_button_C, "D": self.question_button_D}
+
+        answers.remove(self.current_question.correct_answer)
+        random_answer = random.choice(answers)
+        answers.remove(random_answer)
+
+        for answer in answers:
+            self.canvas.itemconfig(answers_text_dict[answer], text="")
+            self.unbind_button(answers_dict[answer])
+    def swap_question(self):
+        self.current_question_number = self.current_question_number - 1
+        self.current_money = self.question_prize_list[self.current_question_number]
+        self.next_question()
+
 
     def init_buttons(self):
         # Initialize buttons here
@@ -151,16 +367,17 @@ class Game:
 
         self.question_button_A = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_A_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
+        self.question_button_A_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+                                                              (y1 + y2) / 2,
                                                               text="A",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
                                                               anchor='w')
         self.A_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
-                                                              text="A:",
-                                                              font='Helvetica 16 bold',
-                                                              fill="orange",
-                                                              anchor='w')
+                                              text="A:",
+                                              font='Helvetica 16 bold',
+                                              fill="orange",
+                                              anchor='w')
 
         x1 += (start_button_width + padding + 2 * start_button_edge)
         x2 += (start_button_width + padding + 2 * start_button_edge)
@@ -186,7 +403,8 @@ class Game:
 
         self.question_button_B = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_B_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
+        self.question_button_B_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+                                                              (y1 + y2) / 2,
                                                               text="B",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
@@ -202,7 +420,8 @@ class Game:
         y4 += (start_button_height + padding)
         self.question_button_D = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_D_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
+        self.question_button_D_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+                                                              (y1 + y2) / 2,
                                                               text="D",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
@@ -220,7 +439,8 @@ class Game:
 
         self.question_button_C = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_C_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding, (y1 + y2) / 2,
+        self.question_button_C_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+                                                              (y1 + y2) / 2,
                                                               text="C",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
@@ -247,7 +467,7 @@ class Game:
                                  lambda event, param1=params[i]: self.on_stop_hover(event, param1))
 
     def unbind_button(self, button):
-        actions = ["<ButtonRelease-1>", "<Enter>", "<Leave>"]
+        actions = ["<ButtonRelease-1>", "<Enter>", "<Leave>", "<Double-Button-1>"]
         for a in actions:
             self.canvas.tag_unbind(button, a)
 
@@ -275,6 +495,7 @@ class Game:
     def reset_attributes(self):
         self.current_question = None
         self.currently_clicked = None
+        self.current_lifeline_clicked = None
 
     def printTest(self, event):
         print("działa")
@@ -587,7 +808,6 @@ class Game:
         self.current_question = self.pick_random_question(prize)
         # self.add_to_already_asked(self.current_question)
         print("New question loaded")
-
 
         self.canvas.itemconfigure(self.question_button_Q_text,
                                   text=cut_question(f"{self.current_question.question}", width=85))
