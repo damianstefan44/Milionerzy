@@ -69,6 +69,16 @@ class Game:
         self.already_asked_path = 'data/already_asked.xlsx'
         self.current_question = None
         self.currently_clicked = None
+        self.timer_time_left = 0
+        self.timer_start_button = None
+        self.timer_stop_button = None
+        self.timer_start_button_text = ""
+        self.timer_stop_button_text = ""
+        self.timer_text = ""
+        self.start_button_clicked = None
+        self.bad_answer = False
+        self.end_prize = 0
+        self.answer_clicked = False
 
         self.question_button_A = None
         self.question_button_A_text = None
@@ -258,43 +268,50 @@ class Game:
 
     def on_lifeline_click(self, event, lifeline):
         if lifeline == "specialist":
-            image = Image.open("photos/lifeline_specialist_red.png")
-            resized_image = image.resize((146, 101))
-            lifeline_image = ImageTk.PhotoImage(resized_image)
-            self.canvas.itemconfig(self.lifeline_specialist, image=lifeline_image)
-            self.lifeline_specialist_image = lifeline_image
-            self.unbind_button(self.lifeline_specialist)
+            if not self.answer_clicked and not self.start_button_clicked:
+                image = Image.open("photos/lifeline_specialist_red.png")
+                resized_image = image.resize((146, 101))
+                lifeline_image = ImageTk.PhotoImage(resized_image)
+                self.canvas.itemconfig(self.lifeline_specialist, image=lifeline_image)
+                self.lifeline_specialist_image = lifeline_image
+                self.unbind_button(self.lifeline_specialist)
+                self.root.after(1000, lambda: self.phone_a_friend())
         elif lifeline == "50":
-            image = Image.open("photos/lifeline_50_red.png")
-            resized_image = image.resize((146, 101))
-            lifeline_image = ImageTk.PhotoImage(resized_image)
-            self.canvas.itemconfig(self.lifeline_50, image=lifeline_image)
-            self.lifeline_50_image = lifeline_image
-            self.unbind_button(self.lifeline_50)
-            self.fifty_fifty()
+            if not self.answer_clicked and not self.start_button_clicked:
+                image = Image.open("photos/lifeline_50_red.png")
+                resized_image = image.resize((146, 101))
+                lifeline_image = ImageTk.PhotoImage(resized_image)
+                self.canvas.itemconfig(self.lifeline_50, image=lifeline_image)
+                self.lifeline_50_image = lifeline_image
+                self.unbind_button(self.lifeline_50)
+                self.fifty_fifty()
         elif lifeline == "phone":
-            image = Image.open("photos/lifeline_phone_red.png")
-            resized_image = image.resize((146, 101))
-            lifeline_image = ImageTk.PhotoImage(resized_image)
-            self.canvas.itemconfig(self.lifeline_phone, image=lifeline_image)
-            self.lifeline_phone_image = lifeline_image
-            self.unbind_button(self.lifeline_phone)
+            if not self.answer_clicked and not self.start_button_clicked:
+                image = Image.open("photos/lifeline_phone_red.png")
+                resized_image = image.resize((146, 101))
+                lifeline_image = ImageTk.PhotoImage(resized_image)
+                self.canvas.itemconfig(self.lifeline_phone, image=lifeline_image)
+                self.lifeline_phone_image = lifeline_image
+                self.unbind_button(self.lifeline_phone)
+                self.root.after(1000, lambda: self.phone_a_friend())
         elif lifeline == "swap":
-            image = Image.open("photos/lifeline_swap_red.png")
-            resized_image = image.resize((146, 101))
-            lifeline_image = ImageTk.PhotoImage(resized_image)
-            self.canvas.itemconfig(self.lifeline_swap, image=lifeline_image)
-            self.lifeline_swap_image = lifeline_image
-            self.unbind_button(self.lifeline_swap)
-            self.root.after(1000, lambda: self.swap_question())
+            if not self.answer_clicked and not self.start_button_clicked:
+                image = Image.open("photos/lifeline_swap_red.png")
+                resized_image = image.resize((146, 101))
+                lifeline_image = ImageTk.PhotoImage(resized_image)
+                self.canvas.itemconfig(self.lifeline_swap, image=lifeline_image)
+                self.lifeline_swap_image = lifeline_image
+                self.unbind_button(self.lifeline_swap)
+                self.root.after(1000, lambda: self.swap_question())
         elif lifeline == "exit":
-            image = Image.open("photos/lifeline_exit_red.png")
-            resized_image = image.resize((146, 101))
-            lifeline_image = ImageTk.PhotoImage(resized_image)
-            self.canvas.itemconfig(self.lifeline_exit, image=lifeline_image)
-            self.lifeline_exit_image = lifeline_image
-            self.unbind_button(self.lifeline_exit)
-            self.root.after(1000, lambda: self.end_game())
+            if not self.answer_clicked and not self.start_button_clicked:
+                image = Image.open("photos/lifeline_exit_red.png")
+                resized_image = image.resize((146, 101))
+                lifeline_image = ImageTk.PhotoImage(resized_image)
+                self.canvas.itemconfig(self.lifeline_exit, image=lifeline_image)
+                self.lifeline_exit_image = lifeline_image
+                self.unbind_button(self.lifeline_exit)
+                self.end_game()
         else:
             print("Bad argument - lifeline - on_lifeline_hover")
 
@@ -312,28 +329,115 @@ class Game:
         for answer in answers:
             self.canvas.itemconfig(answers_text_dict[answer], text="")
             self.unbind_button(answers_dict[answer])
+
     def swap_question(self):
         self.current_question_number = self.current_question_number - 1
         self.current_money = self.question_prize_list[self.current_question_number]
         self.next_question()
 
+    def phone_a_friend(self):
+        self.reset_phone_lifeline()
+        self.start_button_clicked = False
+        start_button_width = 180
+        start_button_height = 40
+        start_button_edge = 15
+        padding = 5
+        to_top = 80
+
+        x1 = self.canvas.winfo_screenwidth() / 100 * 92 - start_button_width / 2
+        x2 = self.canvas.winfo_screenwidth() / 100 * 92 + start_button_width / 2
+        x3 = x1 - start_button_edge
+        x4 = x2 + start_button_edge
+        y1 = self.canvas.winfo_screenheight() * 1 / 20 - start_button_height / 2
+        y2 = self.canvas.winfo_screenheight() * 1 / 20 + start_button_height / 2
+        y3 = y4 = self.canvas.winfo_screenheight() * 1 / 20
+
+        self.timer_start_button = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                             outline='#4D5CDC', fill='#080E43', width=0)
+        self.timer_start_button_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
+                                                               text="START",
+                                                               font='Helvetica 15 bold',
+                                                               fill="white")
+        y1 += (40 + padding)
+        y2 += (40 + padding)
+        y3 += (40 + padding)
+        y4 += (40 + padding)
+
+        self.timer_stop_button = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                            outline='#4D5CDC', fill='#080E43', width=0)
+        self.timer_stop_button_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
+                                                              text="STOP",
+                                                              font='Helvetica 15 bold',
+                                                              fill="white")
+
+        self.timer_text = self.canvas.create_text(self.canvas.winfo_screenwidth() / 2,
+                                                  self.canvas.winfo_screenheight() / 2 - to_top,
+                                                  text="",
+                                                  font='Helvetica 80 bold',
+                                                  fill="white")
+
+        self.canvas.tag_bind(self.timer_start_button, "<Enter>",
+                             lambda e, param1="start": self.on_hover(e, param1))
+        self.canvas.tag_bind(self.timer_start_button, "<Leave>",
+                             lambda e, param1="start": self.on_stop_hover(e, param1))
+        self.canvas.tag_bind(self.timer_start_button, "<Double-Button-1>", self.start_timer)
+        self.canvas.tag_bind(self.timer_start_button_text, "<Enter>",
+                             lambda e, param1="start": self.on_hover(e, param1))
+        self.canvas.tag_bind(self.timer_start_button_text, "<Leave>",
+                             lambda e, param1="start": self.on_stop_hover(e, param1))
+        self.canvas.tag_bind(self.timer_start_button_text, "<Double-Button-1>", self.start_timer)
+        self.canvas.tag_bind(self.timer_stop_button, "<Enter>",
+                             lambda e, param1="stop": self.on_hover(e, param1))
+        self.canvas.tag_bind(self.timer_stop_button, "<Leave>",
+                             lambda e, param1="stop": self.on_stop_hover(e, param1))
+        self.canvas.tag_bind(self.timer_stop_button, "<Double-Button-1>", self.stop_timer)
+        self.canvas.tag_bind(self.timer_stop_button_text, "<Enter>",
+                             lambda e, param1="stop": self.on_hover(e, param1))
+        self.canvas.tag_bind(self.timer_stop_button_text, "<Leave>",
+                             lambda e, param1="stop": self.on_stop_hover(e, param1))
+        self.canvas.tag_bind(self.timer_stop_button_text, "<Double-Button-1>", self.stop_timer)
+
+    def start_timer(self, event):
+        if not self.start_button_clicked:
+            self.timer_time_left = 30
+            self.start_button_clicked = True
+            self.countdown()
+
+    def countdown(self):
+        if self.timer_time_left <= -1:
+            self.canvas.after(1000, self.canvas.itemconfig(self.timer_text, text=""))
+        else:
+            self.canvas.itemconfig(self.timer_text, text=f"{self.timer_time_left}")
+            self.timer_time_left -= 1
+            self.root.after(1000, self.countdown)
+
+    def stop_timer(self, event):
+        if self.start_button_clicked:
+            self.timer_time_left = 0
+            self.start_button_clicked = False
 
     def init_buttons(self):
-        # Initialize buttons here
-        self.question_label = tk.Label(self.canvas, text="What is the capital of France?", font="Helvetica 18",
-                                       fg="white", bg="#080E43")
-        self.question_label.pack()
-
-        # Create a button to switch back to the menu
-        self.switch_button = tk.Button(self.canvas, text="Switch to Menu", command=self.update_after_answer)
-        self.switch_button.pack()
-
         self.create_prize_buttons()
         self.create_question_buttons()
 
+    def create_end_prize_text(self):
+        to_top = 80
+        if self.bad_answer:
+            self.end_prize = self.guaranteed
+        else:
+            self.end_prize = self.current_money
+
+        self.timer_text = self.canvas.create_text(self.canvas.winfo_screenwidth() / 2,
+                                                  self.canvas.winfo_screenheight() / 2 - to_top,
+                                                  text=f"Wygrałeś {self.end_prize} zł!",
+                                                  font='Helvetica 80 bold',
+                                                  fill="white")
+
     def end_game(self):
         print("Game has ended")
-        self.switch_to_menu()
+        self.reset_phone_lifeline()
+        self.root.after(2000, lambda: self.create_end_prize_text())
+        self.root.after(4000, lambda: self.switch_to_menu())
 
     def switch_to_menu(self):
         self.canvas.destroy()
@@ -495,17 +599,25 @@ class Game:
     def reset_attributes(self):
         self.current_question = None
         self.currently_clicked = None
-        self.current_lifeline_clicked = None
+
+    def reset_phone_lifeline(self):
+        self.canvas.delete(self.timer_start_button)
+        self.canvas.delete(self.timer_start_button_text)
+        self.canvas.delete(self.timer_stop_button)
+        self.canvas.delete(self.timer_stop_button_text)
+        self.canvas.delete(self.timer_text)
 
     def printTest(self, event):
         print("działa")
 
     def next_question(self):
-        if self.current_question_number < 15:
+        if self.current_question_number < 14:
             self.reset_attributes()
             self.reset_buttons()
+            self.reset_phone_lifeline()
             self.bind_buttons()
             self.update_after_answer()
+            self.answer_clicked = False
             self.load_new_question()
         else:
             print("Gratulację - wygrałeś MILION")
@@ -538,7 +650,7 @@ class Game:
                 self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#FB1111')
                 self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
                 self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
-                self.root.after(5000, lambda: self.end_game())
+                self.end_game()
         elif answer == "B":
             if answer == correct_answer:
                 self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#00FF00')
@@ -565,12 +677,13 @@ class Game:
                 self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#FB1111')
                 self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
                 self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
-                self.root.after(5000, lambda: self.end_game())
+                self.end_game()
         else:
             print(f"Odpowiedzia powinno byc A, B, C, lub D, a nie: {answer}")
 
     def check_answer(self, answer):
         print(f"Sprawdzam {answer}")
+        self.answer_clicked = True
         if self.current_question_number in [0, 1, 2, 3]:
             self.root.after(2000, lambda: self.show_answer(answer))
         elif self.current_question_number in [5, 6, 7, 8]:
@@ -792,7 +905,7 @@ class Game:
             # print(f"Current money: {self.current_money}")
             # print(f"Guaranteed: {self.guaranteed}")
         else:
-            self.root.after(5000, lambda: self.end_game())
+            self.end_game()
 
     def update_prize_buttons(self):
         for i in range(len(self.prize_button_list)):
@@ -857,6 +970,10 @@ class Game:
             self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#4D5CDC')
         elif button == "D":
             self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#4D5CDC')
+        elif button == "start":
+            self.canvas.itemconfig(self.timer_start_button, outline='#080E43', fill='#4D5CDC')
+        elif button == "stop":
+            self.canvas.itemconfig(self.timer_stop_button, outline='#080E43', fill='#4D5CDC')
         else:
             print("Bad argument - button")
 
@@ -869,6 +986,10 @@ class Game:
             self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
         elif button == "D":
             self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
+        elif button == "start":
+            self.canvas.itemconfig(self.timer_start_button, outline='#4D5CDC', fill='#080E43')
+        elif button == "stop":
+            self.canvas.itemconfig(self.timer_stop_button, outline='#4D5CDC', fill='#080E43')
         else:
             print("Bad argument - button")
 
