@@ -1,11 +1,15 @@
+import os
 import textwrap
 import tkinter as tk
+from time import time_ns
+
 from PIL import ImageTk, Image
 import pandas as pd
 import numpy as np
 import openpyxl
 import random
 import pygame.mixer
+from operator import itemgetter
 
 
 def cut_question(question, width=20):
@@ -39,10 +43,13 @@ def cut_question(question, width=20):
 
 
 class Game:
-    def __init__(self, nickname, menu_frame, root):
+    def __init__(self, nickname, menu_frame, root, menu_canvas, leader_button_text1, leader_button_text2, leader_button_text3,
+                 leader_button_text4, leader_button_text5):
+        self.time_of_load = None
         self.nickname = nickname
         self.root = root
         self.menu_frame = menu_frame
+        self.menu_canvas = menu_canvas
         self.game_frame = None
         self.background_image = None
         self.option_menu = None
@@ -81,7 +88,13 @@ class Game:
         self.bad_answer = False
         self.end_prize = 0
         self.answer_clicked = False
-
+        self.banned_categories = []
+        self.geography_counter = 0
+        self.leader_button_text1 = leader_button_text1
+        self.leader_button_text2 = leader_button_text2
+        self.leader_button_text3 = leader_button_text3
+        self.leader_button_text4 = leader_button_text4
+        self.leader_button_text5 = leader_button_text5
         self.audio_event = None
         self.audio_channel_1 = None
         self.audio_channel_2 = None
@@ -96,7 +109,6 @@ class Game:
         self.audio_end_prize = pygame.mixer.Sound("audio/end_prize.wav")
         self.audio_click_answer = pygame.mixer.Sound("audio/click_answer.wav")
         self.audio_lifeline = pygame.mixer.Sound("audio/lifeline.wav")
-
         self.question_button_A = None
         self.question_button_A_text = None
         self.A_text = None
@@ -112,10 +124,6 @@ class Game:
         self.question_button_Q = None
         self.question_button_Q_text = None
 
-        # DO TESTOWANIA
-        self.question_label = None
-        self.switch_button = None
-
     def start(self):
         self.menu_frame.pack_forget()
         self.init_canvas()  # Initialize canvas
@@ -123,10 +131,10 @@ class Game:
         self.game_frame.update()
         self.game_frame.update_idletasks()
         pygame.mixer.music.stop()
-        #self.reset_channels()
+        # self.reset_channels()
         self.audio_next_question.fadeout(4000)
         self.audio_channel_1 = self.audio_next_question.play()
-        self.root.after(2500, lambda: self.play_background_music())
+        self.audio_event = self.root.after(2500, lambda: self.play_background_music())
 
     def reset_channels(self):
         pygame.mixer.music.stop()
@@ -136,21 +144,6 @@ class Game:
         if self.audio_channel_2:
             self.audio_channel_2.stop()
             print("zastopowalem 2")
-
-    def play_sound(self, path, fade=0, duration=0, callback=None):
-        pygame.mixer.music.load(path)
-        if fade > 0:
-            pygame.mixer.music.fadeout(fade * 1000)
-
-        if duration > 0:
-            self.root.after(duration * 1000, self.stop_music)
-        if callback:
-            self.audio_event = self.root.after(duration * 1000, callback)
-
-        pygame.mixer.music.play()
-
-    def stop_music(self):
-        pygame.mixer.music.stop()
 
     def play_menu_music(self):
         self.reset_channels()
@@ -492,23 +485,36 @@ class Game:
         self.create_question_buttons()
 
     def create_end_prize_text(self):
-        to_top = 80
+        self.end_prize_text = self.canvas.create_text(self.canvas.winfo_screenwidth() / 2,
+                                                      self.canvas.winfo_screenheight() / 2 - 80,
+                                                      text=f"Wygrałeś {self.end_prize} zł!",
+                                                      font='Helvetica 80 bold',
+                                                      fill="white")
+        self.save_result()
+
+    def save_result(self):
+        f = open("data/wyniki.txt", "a")
+        current_time = int(time_ns() / 1000000)
+        f.write(f"{self.nickname}, {self.end_prize}, {current_time}\n")
+
+    def end_game(self):
+        print("Game has ended")
         if self.bad_answer:
             self.end_prize = self.guaranteed
         else:
             self.end_prize = self.current_money
-
-        self.end_prize_text = self.canvas.create_text(self.canvas.winfo_screenwidth() / 2,
-                                                      self.canvas.winfo_screenheight() / 2 - to_top,
-                                                      text=f"Wygrałeś {self.end_prize} zł!",
-                                                      font='Helvetica 80 bold',
-                                                      fill="white")
-
-    def end_game(self):
-        print("Game has ended")
-        self.reset_phone_lifeline()
-        self.root.after(2000, lambda: self.create_end_prize_text())
-        self.root.after(4000, lambda: self.switch_to_menu())
+        if self.end_prize != 1000:
+            self.reset_channels()
+            self.audio_channel_1 = self.audio_end_prize.play()
+            self.reset_phone_lifeline()
+            self.root.after(2000, lambda: self.create_end_prize_text())
+            self.root.after(8000, lambda: self.switch_to_menu())
+        else:
+            self.reset_channels()
+            self.audio_channel_1 = self.audio_million.play()
+            self.reset_phone_lifeline()
+            self.root.after(2000, lambda: self.create_end_prize_text())
+            self.root.after(20000, lambda: self.switch_to_menu())
 
     def switch_to_menu(self):
         self.canvas.destroy()
@@ -517,6 +523,8 @@ class Game:
         self.menu_frame.pack()
         # self.root.after_cancel(self.audio_event)
         self.reset_channels()
+        self.load_leaderboard()
+
         pygame.mixer.music.load("audio/menu.wav")
         pygame.mixer.music.play(loops=-1, fade_ms=1000)
 
@@ -682,6 +690,19 @@ class Game:
         self.canvas.delete(self.timer_stop_button_text)
         self.canvas.delete(self.timer_text)
 
+    def load_leaderboard(self):
+        top_five = pick_top_five_results()
+        if top_five[0][0] is not None:
+            self.menu_canvas.itemconfig(self.leader_button_text1, text=f"{top_five[0][0]} - {top_five[0][1]}")
+        if top_five[1][0] is not None:
+            self.menu_canvas.itemconfig(self.leader_button_text2, text=f"{top_five[1][0]} - {top_five[1][1]}")
+        if top_five[2][0] is not None:
+            self.menu_canvas.itemconfig(self.leader_button_text3, text=f"{top_five[2][0]} - {top_five[2][1]}")
+        if top_five[3][0] is not None:
+            self.menu_canvas.itemconfig(self.leader_button_text4, text=f"{top_five[3][0]} - {top_five[3][1]}")
+        if top_five[4][0] is not None:
+            self.menu_canvas.itemconfig(self.leader_button_text5, text=f"{top_five[4][0]} - {top_five[4][1]}")
+
     def printTest(self, event):
         print("działa")
 
@@ -698,27 +719,36 @@ class Game:
                 self.audio_next_question.fadeout(4000)
                 self.audio_channel_1.stop()
                 self.audio_channel_1 = self.audio_next_question.play()
-                self.root.after(2500, lambda: self.play_background_music())
+                self.audio_event = self.root.after(2500, lambda: self.play_background_music())
             self.load_new_question()
         else:
             print("Gratulację - wygrałeś MILION")
 
+    def reset_audio_event(self):
+        if self.audio_event is not None:
+            # print(self.audio_event)
+            self.root.after_cancel(self.audio_event)
+            self.audio_event = None
+
     def play_wrong_answer(self):
+        print("jestem w play_wrong_answer")
         self.audio_channel_1.stop()
         self.audio_channel_1 = self.audio_wrong_answer.play()
         self.root.after(3000, lambda: self.end_game())
 
     def play_right_answer(self):
+        print("jestem w play_right_answer")
         if self.current_question_number in [4, 9, 14]:
             self.audio_channel_1.stop()
             self.audio_channel_1 = self.audio_right_answer_guaranteed.play()
-            self.root.after(4000, lambda: self.next_question())
+            self.root.after(5000, lambda: self.next_question())
         else:
             self.audio_channel_1.stop()
             self.audio_channel_1 = self.audio_right_answer.play()
-            self.root.after(4000, lambda: self.next_question())
+            self.root.after(5000, lambda: self.next_question())
 
     def show_answer(self, answer):
+        print("jestem w show_answer")
         correct_answer = self.current_question.correct_answer
         correct_button = None
         correct_button_text = None
@@ -782,6 +812,7 @@ class Game:
             print(f"Odpowiedzia powinno byc A, B, C, lub D, a nie: {answer}")
 
     def check_answer(self, answer):
+        print("jestem w check_answer")
         print(f"Sprawdzam {answer}")
         self.answer_clicked = True
         if self.current_question_number in [0, 1, 2, 3]:
@@ -795,15 +826,24 @@ class Game:
         else:
             print("Bledny numer pytania")
 
+    def correct_time(self):
+        current_time = time_ns() / 1000000
+        if current_time - self.time_of_load > 5000:
+            return True
+        return False
+
     def click_answer(self, event, answer):
+        print("jestem w click_answer")
         if answer == "A":
             if self.currently_clicked == "A":
-                self.reset_channels()
-                self.audio_channel_1 = self.audio_click_answer.play()
-                self.unbind_all()
-                self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#F75B11')
-                self.canvas.itemconfig(self.question_button_A_text, fill='#FFFFFF')
-                self.check_answer(answer)
+                if self.correct_time():
+                    self.reset_audio_event()
+                    self.reset_channels()
+                    self.audio_channel_1 = self.audio_click_answer.play()
+                    self.unbind_all()
+                    self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#F75B11')
+                    self.canvas.itemconfig(self.question_button_A_text, fill='#FFFFFF')
+                    self.check_answer(answer)
             else:
                 self.currently_clicked = "A"
                 self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#4D5CDC')
@@ -840,12 +880,14 @@ class Game:
                                      lambda e, param1="D": self.on_stop_hover(e, param1))
         elif answer == "B":
             if self.currently_clicked == "B":
-                self.reset_channels()
-                self.audio_channel_1 = self.audio_click_answer.play()
-                self.unbind_all()
-                self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#F75B11')
-                self.canvas.itemconfig(self.question_button_B_text, fill='#ffffff')
-                self.check_answer(answer)
+                if self.correct_time():
+                    self.reset_audio_event()
+                    self.reset_channels()
+                    self.audio_channel_1 = self.audio_click_answer.play()
+                    self.unbind_all()
+                    self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#F75B11')
+                    self.canvas.itemconfig(self.question_button_B_text, fill='#ffffff')
+                    self.check_answer(answer)
             else:
                 self.currently_clicked = "B"
                 self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#4D5CDC')
@@ -882,12 +924,14 @@ class Game:
                                      lambda e, param1="D": self.on_stop_hover(e, param1))
         elif answer == "C":
             if self.currently_clicked == "C":
-                self.reset_channels()
-                self.audio_channel_1 = self.audio_click_answer.play()
-                self.unbind_all()
-                self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#F75B11')
-                self.canvas.itemconfig(self.question_button_C_text, fill='#ffffff')
-                self.check_answer(answer)
+                if self.correct_time():
+                    self.reset_audio_event()
+                    self.reset_channels()
+                    self.audio_channel_1 = self.audio_click_answer.play()
+                    self.unbind_all()
+                    self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#F75B11')
+                    self.canvas.itemconfig(self.question_button_C_text, fill='#ffffff')
+                    self.check_answer(answer)
             else:
                 self.currently_clicked = "C"
                 self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#4D5CDC')
@@ -924,12 +968,14 @@ class Game:
                                      lambda e, param1="D": self.on_stop_hover(e, param1))
         elif answer == "D":
             if self.currently_clicked == "D":
-                self.reset_channels()
-                self.audio_channel_1 = self.audio_click_answer.play()
-                self.unbind_all()
-                self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#F75B11')
-                self.canvas.itemconfig(self.question_button_D_text, fill='#ffffff')
-                self.check_answer(answer)
+                if self.correct_time():
+                    self.reset_audio_event()
+                    self.reset_channels()
+                    self.audio_channel_1 = self.audio_click_answer.play()
+                    self.unbind_all()
+                    self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#F75B11')
+                    self.canvas.itemconfig(self.question_button_D_text, fill='#ffffff')
+                    self.check_answer(answer)
             else:
                 self.currently_clicked = "D"
                 self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#4D5CDC')
@@ -1024,6 +1070,7 @@ class Game:
                                fill='yellow')
 
     def load_new_question(self):
+        self.time_of_load = time_ns() / 1000000
         prize = self.question_prize_list[self.current_question_number + 1]
         print(prize)
         self.current_question = self.pick_random_question(prize)
@@ -1040,11 +1087,24 @@ class Game:
                                   text=cut_question(f"{self.current_question.answer_C}", width=38))
         self.canvas.itemconfigure(self.question_button_D_text,
                                   text=cut_question(f"{self.current_question.answer_D}", width=38))
+        self.ban_question_category(self.current_question.category)
 
         print(self.current_question.question)
 
+    def ban_question_category(self, category):
+        self.banned_categories.append(category)
+
+        if category in ["kraje i kontynenty", "stolice", "wodne akweny",
+                        "wyspy", "geografia", "miasta", "góry", "flagi"]:
+            self.geography_counter = self.geography_counter + 1
+        if self.geography_counter == 2:
+            for category in ["kraje i kontynenty", "stolice", "wodne akweny",
+                             "wyspy", "geografia", "miasta", "góry", "flagi"]:
+                if category not in self.banned_categories:
+                    self.banned_categories.append(category)
+
     def pick_random_question(self, prize):
-        result = [q for q in self.question_list if q.prize == prize]
+        result = [q for q in self.question_list if (q.prize == prize and q.category not in self.banned_categories)]
         # print(result)
         # print(random.sample(result, 1)[0].question)
         return random.sample(result, 1)[0]
@@ -1114,6 +1174,22 @@ class Question:
         self.prize = prize
 
 
+def pick_top_five_results():
+    data = []
+    if os.path.exists("data/wyniki.txt"):
+        with open("data/wyniki.txt", 'r') as file:
+            for line in file:
+                nickname, end_prize, timestamp = line.strip().split(', ')
+                data.append((nickname.strip(), int(end_prize.strip()), int(timestamp.strip())))
+        sorted_data = sorted(data, key=itemgetter(1, 2), reverse=True)
+        top_five = sorted_data[:5]
+        top_five += [(None, None, None)] * (5 - len(top_five))
+
+        return top_five
+
+    return [(None, None, None)] * 5
+
+
 class Menu:
     def __init__(self):
         self.root = tk.Tk()
@@ -1122,6 +1198,24 @@ class Menu:
         self.start_button_text = None
         self.canvas = None
         self.menu_frame = None
+        self.entry = None
+        self.leader_button = None
+        self.leader_button_text = None
+        self.leader_button1 = None
+        self.leader_button_text1 = None
+        self.leader_button_number1 = None
+        self.leader_button2 = None
+        self.leader_button_text2 = None
+        self.leader_button_number2 = None
+        self.leader_button3 = None
+        self.leader_button_text3 = None
+        self.leader_button_number3 = None
+        self.leader_button4 = None
+        self.leader_button_text4 = None
+        self.leader_button_number4 = None
+        self.leader_button5 = None
+        self.leader_button_text5 = None
+        self.leader_button_number5 = None
         pygame.mixer.init()
 
     def end_fullscreen(self, event):
@@ -1136,6 +1230,109 @@ class Menu:
             self.end_fullscreen(self)
         else:
             self.root.attributes('-fullscreen', True)
+
+    def create_leaderboard(self):
+        button_width = 200
+        button_height = 60
+        button_edge = 15
+        padding = 5
+        text_padding = 130
+        to_right = 15
+
+        x1 = self.canvas.winfo_screenwidth() / 100 * 92 - button_width / 2
+        x2 = self.canvas.winfo_screenwidth() / 100 * 92 + button_width / 2
+        x3 = x1 - button_edge
+        x4 = x2 + button_edge
+        y1 = self.canvas.winfo_screenheight() * 19 / 20 - button_height / 2
+        y2 = self.canvas.winfo_screenheight() * 19 / 20 + button_height / 2
+        y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20
+
+        x1 = x1 - 100
+        x3 = x3 - 100
+
+        self.leader_button5 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text5 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number5 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="5.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= (60 + padding)
+        y2 -= (60 + padding)
+        y3 -= (60 + padding)
+        y4 -= (60 + padding)
+        self.leader_button4 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text4 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number4 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="4.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= (60 + padding)
+        y2 -= (60 + padding)
+        y3 -= (60 + padding)
+        y4 -= (60 + padding)
+        self.leader_button3 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text3 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number3 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="3.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= (60 + padding)
+        y2 -= (60 + padding)
+        y3 -= (60 + padding)
+        y4 -= (60 + padding)
+        self.leader_button2 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text2 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number2 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="2.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= (60 + padding)
+        y2 -= (60 + padding)
+        y3 -= (60 + padding)
+        y4 -= (60 + padding)
+
+        self.leader_button1 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text1 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number1 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="1.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= (60 + padding)
+        y2 -= (60 + padding)
+        y3 -= (60 + padding)
+        y4 -= (60 + padding)
+
+        self.leader_button = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                        outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
+                                                          text="RANKING",
+                                                          font='Helvetica 15 bold',
+                                                          fill="white")
 
     def start_menu(self):
         self.root.title("Milionerzy")
@@ -1182,6 +1379,9 @@ class Menu:
                                                          font='Helvetica 26 bold',
                                                          fill="white")
 
+        self.entry = tk.Entry(self.canvas, font='Helvetica 26 bold', justify=tk.CENTER)
+        self.entry.place(x=(x1 + x2) / 2, y=(y1 + y2) / 2 + 200)
+
         self.canvas.tag_bind(self.start_button, "<ButtonRelease-1>", self.start_game)
         self.canvas.tag_bind(self.start_button_text, "<ButtonRelease-1>", self.start_game)
         self.canvas.tag_bind(self.start_button, "<Enter>", self.on_hover)
@@ -1193,6 +1393,9 @@ class Menu:
         self.menu_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         self.menu_frame.lower()
 
+        self.create_leaderboard()
+        self.load_leaderboard()
+
         pygame.mixer.music.load("audio/menu.wav")
         pygame.mixer.music.play(loops=-1, fade_ms=1000)
 
@@ -1203,11 +1406,24 @@ class Menu:
         print("Game started")
         # Hide the menu frame
         self.menu_frame.pack_forget()
-        game = Game("Test", self.canvas, self.root)
+        game = Game("Test", self.canvas, self.root, self.canvas, self.leader_button_text1, self.leader_button_text2, self.leader_button_text3, self.leader_button_text4, self.leader_button_text5)
         game.read_questions()
         game.start()
         game.update_prize_buttons()
         game.load_new_question()
+
+    def load_leaderboard(self):
+        top_five = pick_top_five_results()
+        if top_five[0][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text1, text=f"{top_five[0][0]} - {top_five[0][1]}")
+        if top_five[1][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text2, text=f"{top_five[1][0]} - {top_five[1][1]}")
+        if top_five[2][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text3, text=f"{top_five[2][0]} - {top_five[2][1]}")
+        if top_five[3][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text4, text=f"{top_five[3][0]} - {top_five[3][1]}")
+        if top_five[4][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text5, text=f"{top_five[4][0]} - {top_five[4][1]}")
 
     def on_hover(self, event):
         self.canvas.itemconfig(self.start_button, outline='#080E43', fill='#4D5CDC')
