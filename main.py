@@ -43,8 +43,10 @@ def cut_question(question, width=20):
 
 
 class Game:
-    def __init__(self, nickname, menu_frame, root, menu_canvas, leader_button_text1, leader_button_text2, leader_button_text3,
-                 leader_button_text4, leader_button_text5):
+    def __init__(self, nickname, menu_frame, root, menu_canvas, leader_button_text1, leader_button_text2,
+                 leader_button_text3,
+                 leader_button_text4, leader_button_text5, leader_button_text6, leader_button_text7,
+                 leader_button_text8, leader_button_text9, leader_button_text10):
         self.time_of_load = None
         self.nickname = nickname
         self.root = root
@@ -95,6 +97,11 @@ class Game:
         self.leader_button_text3 = leader_button_text3
         self.leader_button_text4 = leader_button_text4
         self.leader_button_text5 = leader_button_text5
+        self.leader_button_text6 = leader_button_text6
+        self.leader_button_text7 = leader_button_text7
+        self.leader_button_text8 = leader_button_text8
+        self.leader_button_text9 = leader_button_text9
+        self.leader_button_text10 = leader_button_text10
         self.audio_event = None
         self.audio_channel_1 = None
         self.audio_channel_2 = None
@@ -691,17 +698,27 @@ class Game:
         self.canvas.delete(self.timer_text)
 
     def load_leaderboard(self):
-        top_five = pick_top_five_results()
-        if top_five[0][0] is not None:
-            self.menu_canvas.itemconfig(self.leader_button_text1, text=f"{top_five[0][0]} - {top_five[0][1]}")
-        if top_five[1][0] is not None:
-            self.menu_canvas.itemconfig(self.leader_button_text2, text=f"{top_five[1][0]} - {top_five[1][1]}")
-        if top_five[2][0] is not None:
-            self.menu_canvas.itemconfig(self.leader_button_text3, text=f"{top_five[2][0]} - {top_five[2][1]}")
-        if top_five[3][0] is not None:
-            self.menu_canvas.itemconfig(self.leader_button_text4, text=f"{top_five[3][0]} - {top_five[3][1]}")
-        if top_five[4][0] is not None:
-            self.menu_canvas.itemconfig(self.leader_button_text5, text=f"{top_five[4][0]} - {top_five[4][1]}")
+        top_ten = pick_top_results(10)
+        if top_ten[0][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text1, text=f"{top_ten[0][0]} - {top_ten[0][1]}")
+        if top_ten[1][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text2, text=f"{top_ten[1][0]} - {top_ten[1][1]}")
+        if top_ten[2][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text3, text=f"{top_ten[2][0]} - {top_ten[2][1]}")
+        if top_ten[3][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text4, text=f"{top_ten[3][0]} - {top_ten[3][1]}")
+        if top_ten[4][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text5, text=f"{top_ten[4][0]} - {top_ten[4][1]}")
+        if top_ten[5][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text6, text=f"{top_ten[5][0]} - {top_ten[5][1]}")
+        if top_ten[6][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text7, text=f"{top_ten[6][0]} - {top_ten[6][1]}")
+        if top_ten[7][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text8, text=f"{top_ten[7][0]} - {top_ten[7][1]}")
+        if top_ten[8][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text9, text=f"{top_ten[8][0]} - {top_ten[8][1]}")
+        if top_ten[9][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text10, text=f"{top_ten[9][0]} - {top_ten[9][1]}")
 
     def printTest(self, event):
         print("działa")
@@ -1174,7 +1191,7 @@ class Question:
         self.prize = prize
 
 
-def pick_top_five_results():
+def pick_top_results(num):
     data = []
     if os.path.exists("data/wyniki.txt"):
         with open("data/wyniki.txt", 'r') as file:
@@ -1182,10 +1199,10 @@ def pick_top_five_results():
                 nickname, end_prize, timestamp = line.strip().split(', ')
                 data.append((nickname.strip(), int(end_prize.strip()), int(timestamp.strip())))
         sorted_data = sorted(data, key=itemgetter(1, 2), reverse=True)
-        top_five = sorted_data[:5]
-        top_five += [(None, None, None)] * (5 - len(top_five))
+        top_list = sorted_data[:num]
+        top_list += [(None, None, None)] * (num - len(top_list))
 
-        return top_five
+        return top_list
 
     return [(None, None, None)] * 5
 
@@ -1198,7 +1215,12 @@ class Menu:
         self.start_button_text = None
         self.canvas = None
         self.menu_frame = None
+        self.menu_entry = None
         self.entry = None
+        self.exit = None
+        self.exit_text = None
+        self.save_entry = None
+        self.save_entry_text = None
         self.leader_button = None
         self.leader_button_text = None
         self.leader_button1 = None
@@ -1216,6 +1238,22 @@ class Menu:
         self.leader_button5 = None
         self.leader_button_text5 = None
         self.leader_button_number5 = None
+        self.leader_button6 = None
+        self.leader_button_text6 = None
+        self.leader_button_number6 = None
+        self.leader_button7 = None
+        self.leader_button_text7 = None
+        self.leader_button_number7 = None
+        self.leader_button8 = None
+        self.leader_button_text8 = None
+        self.leader_button_number8 = None
+        self.leader_button9 = None
+        self.leader_button_text9 = None
+        self.leader_button_number9 = None
+        self.leader_button10 = None
+        self.leader_button_text10 = None
+        self.leader_button_number10 = None
+
         pygame.mixer.init()
 
     def end_fullscreen(self, event):
@@ -1231,11 +1269,63 @@ class Menu:
         else:
             self.root.attributes('-fullscreen', True)
 
+    def create_menu_options(self):
+        button_width = 200
+        button_height = 70
+        button_edge = 20
+        padding = 5
+        leader_padding = 75
+        text_padding = 130
+        to_right = 100
+
+        x1 = self.canvas.winfo_screenwidth() / 100 * 8 - button_width / 2
+        x2 = self.canvas.winfo_screenwidth() / 100 * 8 + button_width / 2
+        x3 = x1 - button_edge
+        x4 = x2 + button_edge
+        y1 = self.canvas.winfo_screenheight() * 19 / 20 - button_height / 2 - 20
+        y2 = self.canvas.winfo_screenheight() * 19 / 20 + button_height / 2 - 20
+        y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20 - 20
+
+        x2 = x2 + 100
+        x4 = x4 + 100
+
+        self.exit = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                          outline='#4D5CDC', fill='#080E43', width=0)
+        self.exit_text = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                            text="EXIT",
+                                                            font='Helvetica 15 bold',
+                                                            fill="white",
+                                                            anchor='w')
+
+        y1 -= 9 * leader_padding
+        y2 -= 9 * leader_padding
+        y3 -= 9 * leader_padding
+        y4 -= 9 * leader_padding
+
+        self.save_entry = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                               outline='#4D5CDC', fill='#080E43', width=0)
+        self.save_entry_text = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                 text="ZAPISZ",
+                                                 font='Helvetica 15 bold',
+                                                 fill="white",
+                                                 anchor='w')
+
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
+
+        self.menu_entry = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                     outline='#4D5CDC', fill='#080E43', width=0)
+        self.entry = tk.Entry(self.canvas, font='Helvetica 26 bold', justify=tk.CENTER, width = 15)
+        self.entry.place(x=x1+5, y=y1+12)
+
     def create_leaderboard(self):
         button_width = 200
-        button_height = 60
-        button_edge = 15
+        button_height = 70
+        button_edge = 20
         padding = 5
+        leader_padding = 75
         text_padding = 130
         to_right = 15
 
@@ -1243,12 +1333,92 @@ class Menu:
         x2 = self.canvas.winfo_screenwidth() / 100 * 92 + button_width / 2
         x3 = x1 - button_edge
         x4 = x2 + button_edge
-        y1 = self.canvas.winfo_screenheight() * 19 / 20 - button_height / 2
-        y2 = self.canvas.winfo_screenheight() * 19 / 20 + button_height / 2
-        y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20
+        y1 = self.canvas.winfo_screenheight() * 19 / 20 - button_height / 2 - 20
+        y2 = self.canvas.winfo_screenheight() * 19 / 20 + button_height / 2 - 20
+        y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20 - 20
 
         x1 = x1 - 100
         x3 = x3 - 100
+
+        self.leader_button10 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                          outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text10 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                            text="",
+                                                            font='Helvetica 12 bold',
+                                                            fill="white",
+                                                            anchor='w')
+        self.leader_button_number10 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                              text="10.",
+                                                              font='Helvetica 12 bold',
+                                                              fill="white")
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
+
+        self.leader_button9 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text9 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number9 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="9.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
+
+        self.leader_button8 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text8 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number8 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="8.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
+
+        self.leader_button7 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text7 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number7 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="7.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
+
+        self.leader_button6 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+                                                         outline='#4D5CDC', fill='#080E43', width=0)
+        self.leader_button_text6 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
+                                                           text="",
+                                                           font='Helvetica 12 bold',
+                                                           fill="white",
+                                                           anchor='w')
+        self.leader_button_number6 = self.canvas.create_text((x1 + x2) / 2 - text_padding, (y1 + y2) / 2,
+                                                             text="6.",
+                                                             font='Helvetica 12 bold',
+                                                             fill="white")
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
 
         self.leader_button5 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                          outline='#4D5CDC', fill='#080E43', width=0)
@@ -1261,10 +1431,10 @@ class Menu:
                                                              text="5.",
                                                              font='Helvetica 12 bold',
                                                              fill="white")
-        y1 -= (60 + padding)
-        y2 -= (60 + padding)
-        y3 -= (60 + padding)
-        y4 -= (60 + padding)
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
         self.leader_button4 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                          outline='#4D5CDC', fill='#080E43', width=0)
         self.leader_button_text4 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
@@ -1276,10 +1446,10 @@ class Menu:
                                                              text="4.",
                                                              font='Helvetica 12 bold',
                                                              fill="white")
-        y1 -= (60 + padding)
-        y2 -= (60 + padding)
-        y3 -= (60 + padding)
-        y4 -= (60 + padding)
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
         self.leader_button3 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                          outline='#4D5CDC', fill='#080E43', width=0)
         self.leader_button_text3 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
@@ -1291,10 +1461,10 @@ class Menu:
                                                              text="3.",
                                                              font='Helvetica 12 bold',
                                                              fill="white")
-        y1 -= (60 + padding)
-        y2 -= (60 + padding)
-        y3 -= (60 + padding)
-        y4 -= (60 + padding)
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
         self.leader_button2 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                          outline='#4D5CDC', fill='#080E43', width=0)
         self.leader_button_text2 = self.canvas.create_text((x1 + x2) / 2 - text_padding + to_right, (y1 + y2) / 2,
@@ -1306,10 +1476,10 @@ class Menu:
                                                              text="2.",
                                                              font='Helvetica 12 bold',
                                                              fill="white")
-        y1 -= (60 + padding)
-        y2 -= (60 + padding)
-        y3 -= (60 + padding)
-        y4 -= (60 + padding)
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
 
         self.leader_button1 = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                          outline='#4D5CDC', fill='#080E43', width=0)
@@ -1322,10 +1492,10 @@ class Menu:
                                                              text="1.",
                                                              font='Helvetica 12 bold',
                                                              fill="white")
-        y1 -= (60 + padding)
-        y2 -= (60 + padding)
-        y3 -= (60 + padding)
-        y4 -= (60 + padding)
+        y1 -= leader_padding
+        y2 -= leader_padding
+        y3 -= leader_padding
+        y4 -= leader_padding
 
         self.leader_button = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                         outline='#4D5CDC', fill='#080E43', width=0)
@@ -1379,9 +1549,6 @@ class Menu:
                                                          font='Helvetica 26 bold',
                                                          fill="white")
 
-        self.entry = tk.Entry(self.canvas, font='Helvetica 26 bold', justify=tk.CENTER)
-        self.entry.place(x=(x1 + x2) / 2, y=(y1 + y2) / 2 + 200)
-
         self.canvas.tag_bind(self.start_button, "<ButtonRelease-1>", self.start_game)
         self.canvas.tag_bind(self.start_button_text, "<ButtonRelease-1>", self.start_game)
         self.canvas.tag_bind(self.start_button, "<Enter>", self.on_hover)
@@ -1395,6 +1562,7 @@ class Menu:
 
         self.create_leaderboard()
         self.load_leaderboard()
+        self.create_menu_options()
 
         pygame.mixer.music.load("audio/menu.wav")
         pygame.mixer.music.play(loops=-1, fade_ms=1000)
@@ -1406,24 +1574,37 @@ class Menu:
         print("Game started")
         # Hide the menu frame
         self.menu_frame.pack_forget()
-        game = Game("Test", self.canvas, self.root, self.canvas, self.leader_button_text1, self.leader_button_text2, self.leader_button_text3, self.leader_button_text4, self.leader_button_text5)
+        game = Game("Test", self.canvas, self.root, self.canvas, self.leader_button_text1,
+                    self.leader_button_text2, self.leader_button_text3, self.leader_button_text4,
+                    self.leader_button_text5, self.leader_button_text6, self.leader_button_text7,
+                    self.leader_button_text8, self.leader_button_text9, self.leader_button_text10)
         game.read_questions()
         game.start()
         game.update_prize_buttons()
         game.load_new_question()
 
     def load_leaderboard(self):
-        top_five = pick_top_five_results()
-        if top_five[0][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text1, text=f"{top_five[0][0]} - {top_five[0][1]}")
-        if top_five[1][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text2, text=f"{top_five[1][0]} - {top_five[1][1]}")
-        if top_five[2][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text3, text=f"{top_five[2][0]} - {top_five[2][1]}")
-        if top_five[3][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text4, text=f"{top_five[3][0]} - {top_five[3][1]}")
-        if top_five[4][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text5, text=f"{top_five[4][0]} - {top_five[4][1]}")
+        top_ten = pick_top_results(10)
+        if top_ten[0][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text1, text=f"{top_ten[0][0]} - {top_ten[0][1]}")
+        if top_ten[1][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text2, text=f"{top_ten[1][0]} - {top_ten[1][1]}")
+        if top_ten[2][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text3, text=f"{top_ten[2][0]} - {top_ten[2][1]}")
+        if top_ten[3][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text4, text=f"{top_ten[3][0]} - {top_ten[3][1]}")
+        if top_ten[4][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text5, text=f"{top_ten[4][0]} - {top_ten[4][1]}")
+        if top_ten[5][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text6, text=f"{top_ten[5][0]} - {top_ten[5][1]}")
+        if top_ten[6][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text7, text=f"{top_ten[6][0]} - {top_ten[6][1]}")
+        if top_ten[7][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text8, text=f"{top_ten[7][0]} - {top_ten[7][1]}")
+        if top_ten[8][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text9, text=f"{top_ten[8][0]} - {top_ten[8][1]}")
+        if top_ten[9][0] is not None:
+            self.canvas.itemconfig(self.leader_button_text10, text=f"{top_ten[9][0]} - {top_ten[9][1]}")
 
     def on_hover(self, event):
         self.canvas.itemconfig(self.start_button, outline='#080E43', fill='#4D5CDC')
