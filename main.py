@@ -9,6 +9,27 @@ import pygame.mixer
 from operator import itemgetter
 
 
+QUESTION_PRIZE_LIST = [0, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000, 
+                       40000, 75000, 125000, 250000, 500000, 1000000]
+GUARANTEED_LIST = [1000, 40000, 1000000]
+PRIZE_VALUES = ["0 zł", "100 zł", "200 zł", "300 zł", "500 zł", "1000 zł", "2000 zł", "5000 zł", "10 000 zł",
+                        "20 000 zł", "40 000 zł", "75 000 zł", "125 000 zł", "250 000 zł", "500 000 zł",
+                        "1 000 000 zł"]
+TEXT_COLORS = ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"]
+pygame.mixer.init()
+AUDIO_NEXT_QUESTION = pygame.mixer.Sound("audio/next_question.wav")
+AUDIO_BACKGROUND = pygame.mixer.Sound("audio/background1.wav")
+AUDIO_MENU = pygame.mixer.Sound("audio/menu.wav")
+AUDIO_WRONG_ANSWER = pygame.mixer.Sound("audio/wrong_answer.wav")
+AUDIO_RIGHT_ANSWER = pygame.mixer.Sound("audio/right_answer.wav")
+AUDIO_RIGHT_ANSWER_GUARANTEED = pygame.mixer.Sound("audio/right_answer_guaranteed.wav")
+AUDIO_MILLION = pygame.mixer.Sound("audio/million.wav")
+AUDIO_PHONE = pygame.mixer.Sound("audio/phone.wav")
+AUDIO_END_PRIZE = pygame.mixer.Sound("audio/end_prize.wav")
+AUDIO_CLICK_ANSWER = pygame.mixer.Sound("audio/click_answer.wav")
+AUDIO_LIFELINE = pygame.mixer.Sound("audio/lifeline.wav")
+
+
 def cut_question(question, width=20):
     # Split the question into lines
     lines = question.split('\n')
@@ -40,13 +61,14 @@ def cut_question(question, width=20):
 
 
 class Game:
-    def __init__(self, nickname, menu_frame, root, menu_canvas, leader_button_text1, leader_button_text2,
+    def __init__(self, menu, nickname, menu_frame, root, menu_canvas, leader_button_text1, leader_button_text2,
                  leader_button_text3,
                  leader_button_text4, leader_button_text5, leader_button_text6, leader_button_text7,
                  leader_button_text8, leader_button_text9, leader_button_text10):
         self.time_of_load = None
         self.nickname = nickname
         self.root = root
+        self.menu = menu
         self.menu_frame = menu_frame
         self.menu_canvas = menu_canvas
         self.game_frame = None
@@ -65,9 +87,6 @@ class Game:
         self.canvas = None
         self.prize_button_list = []
         self.prize_button_text_list = []
-        self.question_prize_list = [0, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000,
-                                    40000, 75000, 125000, 250000, 500000, 1000000]
-        self.guaranteed_list = [1000, 40000, 1000000]
         self.current_question_number = 0
         self.current_money = 0
         self.guaranteed = 0
@@ -102,31 +121,13 @@ class Game:
         self.audio_event = None
         self.audio_channel_1 = None
         self.audio_channel_2 = None
-        self.audio_next_question = pygame.mixer.Sound("audio/next_question.wav")
-        self.audio_background = pygame.mixer.Sound("audio/background1.wav")
-        self.audio_menu = pygame.mixer.Sound("audio/menu.wav")
-        self.audio_wrong_answer = pygame.mixer.Sound("audio/wrong_answer.wav")
-        self.audio_right_answer = pygame.mixer.Sound("audio/right_answer.wav")
-        self.audio_right_answer_guaranteed = pygame.mixer.Sound("audio/right_answer_guaranteed.wav")
-        self.audio_million = pygame.mixer.Sound("audio/million.wav")
-        self.audio_phone = pygame.mixer.Sound("audio/phone.wav")
-        self.audio_end_prize = pygame.mixer.Sound("audio/end_prize.wav")
-        self.audio_click_answer = pygame.mixer.Sound("audio/click_answer.wav")
-        self.audio_lifeline = pygame.mixer.Sound("audio/lifeline.wav")
-        self.question_button_A = None
-        self.question_button_A_text = None
-        self.A_text = None
-        self.question_button_B = None
-        self.question_button_B_text = None
-        self.B_text = None
-        self.question_button_C = None
-        self.question_button_C_text = None
-        self.C_text = None
-        self.question_button_D = None
-        self.question_button_D_text = None
-        self.D_text = None
-        self.question_button_Q = None
-        self.question_button_Q_text = None
+        self.question_buttons = {
+            'A': {'button': None, 'button_text': None, 'text': None},
+            'B': {'button': None, 'button_text': None, 'text': None},
+            'C': {'button': None, 'button_text': None, 'text': None},
+            'D': {'button': None, 'button_text': None, 'text': None},
+            'Q': {'button': None, 'button_text': None}
+        }
 
     def start(self):
         self.menu_frame.pack_forget()
@@ -135,8 +136,8 @@ class Game:
         self.game_frame.update()
         self.game_frame.update_idletasks()
         pygame.mixer.music.stop()
-        self.audio_next_question.fadeout(4000)
-        self.audio_channel_1 = self.audio_next_question.play()
+        AUDIO_NEXT_QUESTION.fadeout(4000)
+        self.audio_channel_1 = AUDIO_NEXT_QUESTION.play()
         self.audio_event = self.root.after(2500, lambda: self.play_background_music())
 
     def reset_channels(self):
@@ -150,12 +151,12 @@ class Game:
 
     def play_menu_music(self):
         self.reset_channels()
-        self.audio_channel_2 = self.audio_menu.play(loops=-1, fade_ms=1000)
+        self.audio_channel_2 = AUDIO_MENU.play(loops=-1, fade_ms=1000)
 
     def play_background_music(self):
         if self.audio_channel_2:
             self.audio_channel_2.stop()
-        self.audio_channel_2 = self.audio_background.play(loops=-1, fade_ms=1000)
+        self.audio_channel_2 = AUDIO_BACKGROUND.play(loops=-1, fade_ms=1000)
         self.root.after(2000, self.audio_channel_1.stop)
 
     def create_black_rectangle(self, width):
@@ -325,7 +326,7 @@ class Game:
                 self.lifeline_specialist_image = lifeline_image
                 self.unbind_button(self.lifeline_specialist)
                 self.audio_channel_1.stop()
-                self.audio_channel_1.play(self.audio_lifeline)
+                self.audio_channel_1.play(AUDIO_LIFELINE)
                 self.phone_a_friend()
         elif lifeline == "50":
             if not self.answer_clicked and not self.start_button_clicked:
@@ -336,7 +337,7 @@ class Game:
                 self.lifeline_50_image = lifeline_image
                 self.unbind_button(self.lifeline_50)
                 self.audio_channel_1.stop()
-                self.audio_channel_1.play(self.audio_lifeline)
+                self.audio_channel_1.play(AUDIO_LIFELINE)
                 self.fifty_fifty()
         elif lifeline == "phone":
             if not self.answer_clicked and not self.start_button_clicked:
@@ -347,7 +348,7 @@ class Game:
                 self.lifeline_phone_image = lifeline_image
                 self.unbind_button(self.lifeline_phone)
                 self.audio_channel_1.stop()
-                self.audio_channel_1.play(self.audio_lifeline)
+                self.audio_channel_1.play(AUDIO_LIFELINE)
                 self.phone_a_friend()
         elif lifeline == "swap":
             if not self.answer_clicked and not self.start_button_clicked:
@@ -358,7 +359,7 @@ class Game:
                 self.lifeline_swap_image = lifeline_image
                 self.unbind_button(self.lifeline_swap)
                 self.audio_channel_1.stop()
-                self.audio_channel_1.play(self.audio_lifeline)
+                self.audio_channel_1.play(AUDIO_LIFELINE)
                 self.swap_question()
         elif lifeline == "exit":
             if not self.answer_clicked and not self.start_button_clicked:
@@ -369,17 +370,17 @@ class Game:
                 self.lifeline_exit_image = lifeline_image
                 self.unbind_button(self.lifeline_exit)
                 self.audio_channel_1.stop()
-                self.audio_channel_1.play(self.audio_lifeline)
+                self.audio_channel_1.play(AUDIO_LIFELINE)
                 self.end_game()
         else:
             print("Bad argument - lifeline - on_lifeline_hover")
 
     def fifty_fifty(self):
         answers = ["A", "B", "C", "D"]
-        answers_text_dict = {"A": self.question_button_A_text, "B": self.question_button_B_text,
-                             "C": self.question_button_C_text, "D": self.question_button_D_text}
-        answers_dict = {"A": self.question_button_A, "B": self.question_button_B,
-                        "C": self.question_button_C, "D": self.question_button_D}
+        answers_text_dict = {"A": self.question_buttons['A']['button_text'], "B": self.question_buttons['B']['button_text'],
+                             "C": self.question_buttons['C']['button_text'], "D": self.question_buttons['D']['button_text']}
+        answers_dict = {"A": self.question_buttons['A']['button'], "B": self.question_buttons['B']['button'],
+                        "C": self.question_buttons['C']['button'], "D": self.question_buttons['D']['button']}
 
         answers.remove(self.current_question.correct_answer)
         random_answer = random.choice(answers)
@@ -391,7 +392,7 @@ class Game:
 
     def swap_question(self):
         self.current_question_number = self.current_question_number - 1
-        self.current_money = self.question_prize_list[self.current_question_number]
+        self.current_money = QUESTION_PRIZE_LIST[self.current_question_number]
         self.next_question(swap=True)
 
     def phone_a_friend(self):
@@ -460,7 +461,7 @@ class Game:
                 self.audio_channel_2.stop()
             if self.audio_channel_1:
                 self.audio_channel_1.stop()
-            self.audio_channel_1.play(self.audio_phone)
+            self.audio_channel_1.play(AUDIO_PHONE)
             self.timer_time_left = 30
             self.start_button_clicked = True
             self.countdown()
@@ -469,7 +470,7 @@ class Game:
         if self.timer_time_left <= -1:
             self.canvas.after(1000, self.canvas.itemconfig(self.timer_text, text=""))
             self.audio_channel_1.stop()
-            self.audio_channel_2.play(self.audio_background)
+            self.audio_channel_2.play(AUDIO_BACKGROUND)
             self.start_button_clicked = False
         else:
             self.canvas.itemconfig(self.timer_text, text=f"{self.timer_time_left}")
@@ -494,7 +495,7 @@ class Game:
         self.save_result()
 
     def save_result(self):
-        f = open("data/wyniki.txt", "a")
+        f = open("data/wyniki.txt", "a", encoding="utf-8")
         current_time = int(time_ns() / 1000000)
         f.write(f"{self.nickname}, {self.end_prize}, {current_time}\n")
 
@@ -506,13 +507,13 @@ class Game:
             self.end_prize = self.current_money
         if self.end_prize != 1000:
             self.reset_channels()
-            self.audio_channel_1 = self.audio_end_prize.play()
+            self.audio_channel_1 = AUDIO_END_PRIZE.play()
             self.reset_phone_lifeline()
             self.root.after(2000, lambda: self.create_end_prize_text())
             self.root.after(8000, lambda: self.switch_to_menu())
         else:
             self.reset_channels()
-            self.audio_channel_1 = self.audio_million.play()
+            self.audio_channel_1 = AUDIO_MILLION.play()
             self.reset_phone_lifeline()
             self.root.after(2000, lambda: self.create_end_prize_text())
             self.root.after(20000, lambda: self.switch_to_menu())
@@ -524,7 +525,7 @@ class Game:
         self.menu_frame.pack()
         # self.root.after_cancel(self.audio_event)
         self.reset_channels()
-        self.load_leaderboard()
+        self.menu.load_leaderboard()
 
         pygame.mixer.music.load("audio/menu.wav")
         pygame.mixer.music.play(loops=-1, fade_ms=1000)
@@ -553,15 +554,15 @@ class Game:
         qx3 = x1
         qy3 = y1 - (start_button_height + padding)
 
-        self.question_button_A = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+        self.question_buttons['A']['button'] = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_A_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+        self.question_buttons['A']['button_text'] = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
                                                               (y1 + y2) / 2,
                                                               text="A",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
                                                               anchor='w')
-        self.A_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+        self.question_buttons['A']['text'] = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
                                               text="A:",
                                               font='Helvetica 16 bold',
                                               fill="orange",
@@ -579,67 +580,68 @@ class Game:
         qx6 = x2
         qy6 = y2 - (start_button_height + padding)
 
-        self.question_button_Q = self.canvas.create_polygon(
+        self.question_buttons['Q']['button'] = self.canvas.create_polygon(
             [qx1, qy1, qx2, qy2, qx3, qy3, qx4, qy4, qx5, qy5, qx6, qy6],
             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_Q_text = self.canvas.create_text((qx1 + qx6) / 2, qy2,
+        self.question_buttons['Q']['button_text'] = self.canvas.create_text((qx1 + qx6) / 2, qy2,
                                                               text="",
                                                               font='Helvetica 12 bold',
                                                               fill="white",
                                                               anchor='center',
                                                               justify='center')
 
-        self.question_button_B = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+        self.question_buttons['B']['button'] = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_B_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+        self.question_buttons['B']['button_text'] = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
                                                               (y1 + y2) / 2,
                                                               text="B",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
                                                               anchor='w')
-        self.B_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+        self.question_buttons['B']['text'] = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
                                               text="B:",
                                               font='Helvetica 16 bold',
                                               fill="orange",
                                               anchor='w')
 
         y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, -(start_button_height + padding))
-        self.question_button_D = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+        self.question_buttons['D']['button'] = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_D_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+        self.question_buttons['D']['button_text'] = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
                                                               (y1 + y2) / 2,
                                                               text="D",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
                                                               anchor='w')
-        self.D_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+        self.question_buttons['D']['text'] = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
                                               text="D:",
                                               font='Helvetica 16 bold',
                                               fill="orange",
                                               anchor='w')
 
-        x1, x2, x3, x4 = substract_leader_padding(x1, x2, x3, x4, (start_button_width + padding + 2 * start_button_edge))
+        x1, x2, x3, x4 = substract_leader_padding(x1, x2, x3, x4,
+                                                  (start_button_width + padding + 2 * start_button_edge))
 
-        self.question_button_C = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+        self.question_buttons['C']['button'] = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                             outline='#4D5CDC', fill='#080E43', width=0)
-        self.question_button_C_text = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
+        self.question_buttons['C']['button_text'] = self.canvas.create_text((x1 + x2) / 2 - to_left + answer_text_padding,
                                                               (y1 + y2) / 2,
                                                               text="C",
                                                               font='Helvetica 10 bold',
                                                               fill="white",
                                                               anchor='w')
-        self.C_text = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
+        self.question_buttons['C']['text'] = self.canvas.create_text((x1 + x2) / 2 - to_left - left_padding, (y1 + y2) / 2,
                                               text="C:",
                                               font='Helvetica 16 bold',
                                               fill="orange",
                                               anchor='w')
-        self.bind_buttons()
+        self.bind_question_buttons()
 
-    def bind_buttons(self):
-        buttons = [self.question_button_A, self.question_button_A_text,
-                   self.question_button_B, self.question_button_B_text,
-                   self.question_button_C, self.question_button_C_text,
-                   self.question_button_D, self.question_button_D_text]
+    def bind_question_buttons(self):
+        buttons = [self.question_buttons['A']['button'], self.question_buttons['A']['button_text'],
+                   self.question_buttons['B']['button'], self.question_buttons['B']['button_text'],
+                   self.question_buttons['C']['button'], self.question_buttons['C']['button_text'],
+                   self.question_buttons['D']['button'], self.question_buttons['D']['button_text']]
         params = ["A", "A", "B", "B", "C", "C", "D", "D"]
         for i in range(8):
             self.canvas.tag_bind(buttons[i], "<ButtonRelease-1>",
@@ -654,26 +656,25 @@ class Game:
         for a in actions:
             self.canvas.tag_unbind(button, a)
 
-    def unbind_all(self):
-        buttons = [self.question_button_A, self.question_button_A_text,
-                   self.question_button_B, self.question_button_B_text,
-                   self.question_button_C, self.question_button_C_text,
-                   self.question_button_D, self.question_button_D_text]
+    def unbind_all_question_buttons(self):
+        buttons = [self.question_buttons['A']['button'], self.question_buttons['A']['button_text'],
+                   self.question_buttons['B']['button'], self.question_buttons['B']['button_text'],
+                   self.question_buttons['C']['button'], self.question_buttons['C']['button_text'],
+                   self.question_buttons['D']['button'], self.question_buttons['D']['button_text']]
         actions = ["<ButtonRelease-1>", "<Enter>", "<Leave>"]
         for b in buttons:
             for a in actions:
                 self.canvas.tag_unbind(b, a)
 
-    def reset_buttons(self):
-        self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
-        self.canvas.itemconfig(self.question_button_B, outline='#4D5CDC', fill='#080E43')
-        self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
-        self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
-        self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
-        self.canvas.itemconfig(self.question_button_A_text, fill="white")
-        self.canvas.itemconfig(self.question_button_B_text, fill="white")
-        self.canvas.itemconfig(self.question_button_C_text, fill="white")
-        self.canvas.itemconfig(self.question_button_D_text, fill="white")
+    def reset_question_buttons(self):
+        self.canvas.itemconfig(self.question_buttons['A']['button'], outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_buttons['B']['button'], outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_buttons['C']['button'], outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_buttons['D']['button'], outline='#4D5CDC', fill='#080E43')
+        self.canvas.itemconfig(self.question_buttons['A']['button_text'], fill="white")
+        self.canvas.itemconfig(self.question_buttons['B']['button_text'], fill="white")
+        self.canvas.itemconfig(self.question_buttons['C']['button_text'], fill="white")
+        self.canvas.itemconfig(self.question_buttons['D']['button_text'], fill="white")
 
     def reset_attributes(self):
         self.current_question = None
@@ -686,42 +687,19 @@ class Game:
         self.canvas.delete(self.timer_stop_button_text)
         self.canvas.delete(self.timer_text)
 
-    def load_leaderboard(self):
-        top_ten = pick_top_results(10)
-        if top_ten[0][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text1, text=f"{top_ten[0][0]} - {top_ten[0][1]}")
-        if top_ten[1][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text2, text=f"{top_ten[1][0]} - {top_ten[1][1]}")
-        if top_ten[2][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text3, text=f"{top_ten[2][0]} - {top_ten[2][1]}")
-        if top_ten[3][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text4, text=f"{top_ten[3][0]} - {top_ten[3][1]}")
-        if top_ten[4][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text5, text=f"{top_ten[4][0]} - {top_ten[4][1]}")
-        if top_ten[5][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text6, text=f"{top_ten[5][0]} - {top_ten[5][1]}")
-        if top_ten[6][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text7, text=f"{top_ten[6][0]} - {top_ten[6][1]}")
-        if top_ten[7][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text8, text=f"{top_ten[7][0]} - {top_ten[7][1]}")
-        if top_ten[8][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text9, text=f"{top_ten[8][0]} - {top_ten[8][1]}")
-        if top_ten[9][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text10, text=f"{top_ten[9][0]} - {top_ten[9][1]}")
-
     def next_question(self, swap=False):
         if self.current_question_number < 14:
             self.reset_attributes()
-            self.reset_buttons()
+            self.reset_question_buttons()
             self.reset_phone_lifeline()
-            self.bind_buttons()
+            self.bind_question_buttons()
             self.update_after_answer()
             self.start_button_clicked = False
             self.answer_clicked = False
             if not swap:
-                self.audio_next_question.fadeout(4000)
+                AUDIO_NEXT_QUESTION.fadeout(4000)
                 self.audio_channel_1.stop()
-                self.audio_channel_1 = self.audio_next_question.play()
+                self.audio_channel_1 = AUDIO_NEXT_QUESTION.play()
                 self.audio_event = self.root.after(2500, lambda: self.play_background_music())
             self.load_new_question()
         else:
@@ -729,99 +707,69 @@ class Game:
 
     def reset_audio_event(self):
         if self.audio_event is not None:
-            # print(self.audio_event)
             self.root.after_cancel(self.audio_event)
             self.audio_event = None
 
     def play_wrong_answer(self):
         self.audio_channel_1.stop()
-        self.audio_channel_1 = self.audio_wrong_answer.play()
+        self.audio_channel_1 = AUDIO_WRONG_ANSWER.play()
         self.root.after(3000, lambda: self.end_game())
 
     def play_right_answer(self):
         if self.current_question_number in [4, 9, 14]:
             self.audio_channel_1.stop()
-            self.audio_channel_1 = self.audio_right_answer_guaranteed.play()
+            self.audio_channel_1 = AUDIO_RIGHT_ANSWER_GUARANTEED.play()
             self.root.after(5000, lambda: self.next_question())
         else:
             self.audio_channel_1.stop()
-            self.audio_channel_1 = self.audio_right_answer.play()
+            self.audio_channel_1 = AUDIO_RIGHT_ANSWER.play()
             self.root.after(5000, lambda: self.next_question())
 
     def show_answer(self, answer):
         correct_answer = self.current_question.correct_answer
-        correct_button = None
-        correct_button_text = None
+        button_map = {
+            "A": (self.question_buttons['A']['button'], self.question_buttons['A']['button_text']),
+            "B": (self.question_buttons['B']['button'], self.question_buttons['B']['button_text']),
+            "C": (self.question_buttons['C']['button'], self.question_buttons['C']['button_text']),
+            "D": (self.question_buttons['D']['button'], self.question_buttons['D']['button_text']),
+        }
 
-        if correct_answer == "A":
-            correct_button = self.question_button_A
-            correct_button_text = self.question_button_A_text
-        elif correct_answer == "B":
-            correct_button = self.question_button_B
-            correct_button_text = self.question_button_B_text
-        elif correct_answer == "C":
-            correct_button = self.question_button_C
-            correct_button_text = self.question_button_C_text
-        elif correct_answer == "D":
-            correct_button = self.question_button_D
-            correct_button_text = self.question_button_D_text
-        else:
+        if correct_answer not in button_map:
             print(f"Odpowiedzia powinno byc A, B, C, lub D, a nie: {correct_answer}")
+            return
 
-        if answer == "A":
-            if answer == correct_answer:
-                self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#00FF00')
-                self.play_right_answer()
-            else:
-                self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#FB1111')
-                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
-                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
-                self.bad_answer = True
-                self.play_wrong_answer()
-        elif answer == "B":
-            if answer == correct_answer:
-                self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#00FF00')
-                self.play_right_answer()
-            else:
-                self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#FB1111')
-                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
-                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
-                self.bad_answer = True
-                self.play_wrong_answer()
-        elif answer == "C":
-            if answer == correct_answer:
-                self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#00FF00')
-                self.play_right_answer()
-            else:
-                self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#FB1111')
-                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
-                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
-                self.bad_answer = True
-                self.play_wrong_answer()
-        elif answer == "D":
-            if answer == correct_answer:
-                self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#00FF00')
-                self.play_right_answer()
-            else:
-                self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#FB1111')
-                self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
-                self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
-                self.bad_answer = True
-                self.play_wrong_answer()
-        else:
+        correct_button, correct_button_text = button_map[correct_answer]
+
+        if answer not in button_map:
             print(f"Odpowiedzia powinno byc A, B, C, lub D, a nie: {answer}")
+            return
+
+        selected_button, _ = button_map[answer]
+
+        if answer == correct_answer:
+            self.canvas.itemconfig(selected_button, outline='#080E43', fill='#00FF00')
+            self.play_right_answer()
+        else:
+            self.canvas.itemconfig(selected_button, outline='#080E43', fill='#FB1111')
+            self.canvas.itemconfig(correct_button, outline='#080E43', fill='#00FF00')
+            self.canvas.itemconfig(correct_button_text, fill='#FFFFFF')
+            self.bad_answer = True
+            self.play_wrong_answer()
 
     def check_answer(self, answer):
         print(f"Sprawdzam {answer}")
         self.answer_clicked = True
-        if self.current_question_number in [0, 1, 2, 3]:
-            self.root.after(4000, lambda: self.show_answer(answer))
-        elif self.current_question_number in [5, 6, 7, 8]:
-            self.root.after(4000, lambda: self.show_answer(answer))
-        elif self.current_question_number in [10, 11, 12, 13]:
-            self.root.after(5000, lambda: self.show_answer(answer))
-        elif self.current_question_number in [4, 9, 14]:
-            self.root.after(6000, lambda: self.show_answer(answer))
+        delay_mapping = {
+            (0, 1, 2, 3): 4000,
+            (5, 6, 7, 8): 4000,
+            (10, 11, 12, 13): 5000,
+            (4, 9, 14): 6000
+        }
+        # Determine the delay based on the current question number
+        delay = next((delay for questions, delay in delay_mapping.items() if self.current_question_number in questions),
+                     None)
+        if delay is not None:
+            self.root.after(delay, lambda: self.show_answer(answer))
         else:
             print("Bledny numer pytania")
 
@@ -832,184 +780,58 @@ class Game:
         return False
 
     def click_answer(self, event, answer):
-        if answer == "A":
-            if self.currently_clicked == "A":
-                if self.correct_time():
-                    self.reset_audio_event()
-                    self.reset_channels()
-                    self.audio_channel_1 = self.audio_click_answer.play()
-                    self.unbind_all()
-                    self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#F75B11')
-                    self.canvas.itemconfig(self.question_button_A_text, fill='#FFFFFF')
-                    self.check_answer(answer)
-            else:
-                self.currently_clicked = "A"
-                self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#4D5CDC')
-                self.canvas.itemconfig(self.question_button_B, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
-                self.canvas.tag_unbind(self.question_button_A, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_A_text, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_A, "<Leave>")
-                self.canvas.tag_unbind(self.question_button_A_text, "<Leave>")
-                self.canvas.tag_bind(self.question_button_B, "<Enter>",
-                                     lambda e, param1="B": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B_text, "<Enter>",
-                                     lambda e, param1="B": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B, "<Leave>",
-                                     lambda e, param1="B": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B_text, "<Leave>",
-                                     lambda e, param1="B": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C, "<Enter>",
-                                     lambda e, param1="C": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C_text, "<Enter>",
-                                     lambda e, param1="C": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C, "<Leave>",
-                                     lambda e, param1="C": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C_text, "<Leave>",
-                                     lambda e, param1="C": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D, "<Enter>",
-                                     lambda e, param1="D": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D_text, "<Enter>",
-                                     lambda e, param1="D": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D, "<Leave>",
-                                     lambda e, param1="D": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D_text, "<Leave>",
-                                     lambda e, param1="D": self.on_stop_hover(e, param1))
-        elif answer == "B":
-            if self.currently_clicked == "B":
-                if self.correct_time():
-                    self.reset_audio_event()
-                    self.reset_channels()
-                    self.audio_channel_1 = self.audio_click_answer.play()
-                    self.unbind_all()
-                    self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#F75B11')
-                    self.canvas.itemconfig(self.question_button_B_text, fill='#ffffff')
-                    self.check_answer(answer)
-            else:
-                self.currently_clicked = "B"
-                self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#4D5CDC')
-                self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
-                self.canvas.tag_unbind(self.question_button_B, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_B_text, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_B, "<Leave>")
-                self.canvas.tag_unbind(self.question_button_B_text, "<Leave>")
-                self.canvas.tag_bind(self.question_button_A, "<Enter>",
-                                     lambda e, param1="A": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A_text, "<Enter>",
-                                     lambda e, param1="A": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A, "<Leave>",
-                                     lambda e, param1="A": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A_text, "<Leave>",
-                                     lambda e, param1="A": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C, "<Enter>",
-                                     lambda e, param1="C": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C_text, "<Enter>",
-                                     lambda e, param1="C": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C, "<Leave>",
-                                     lambda e, param1="C": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C_text, "<Leave>",
-                                     lambda e, param1="C": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D, "<Enter>",
-                                     lambda e, param1="D": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D_text, "<Enter>",
-                                     lambda e, param1="D": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D, "<Leave>",
-                                     lambda e, param1="D": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D_text, "<Leave>",
-                                     lambda e, param1="D": self.on_stop_hover(e, param1))
-        elif answer == "C":
-            if self.currently_clicked == "C":
-                if self.correct_time():
-                    self.reset_audio_event()
-                    self.reset_channels()
-                    self.audio_channel_1 = self.audio_click_answer.play()
-                    self.unbind_all()
-                    self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#F75B11')
-                    self.canvas.itemconfig(self.question_button_C_text, fill='#ffffff')
-                    self.check_answer(answer)
-            else:
-                self.currently_clicked = "C"
-                self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#4D5CDC')
-                self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_B, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
-                self.canvas.tag_unbind(self.question_button_C, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_C_text, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_C, "<Leave>")
-                self.canvas.tag_unbind(self.question_button_C_text, "<Leave>")
-                self.canvas.tag_bind(self.question_button_B, "<Enter>",
-                                     lambda e, param1="B": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B_text, "<Enter>",
-                                     lambda e, param1="B": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B, "<Leave>",
-                                     lambda e, param1="B": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B_text, "<Leave>",
-                                     lambda e, param1="B": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A, "<Enter>",
-                                     lambda e, param1="A": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A_text, "<Enter>",
-                                     lambda e, param1="A": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A, "<Leave>",
-                                     lambda e, param1="A": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A_text, "<Leave>",
-                                     lambda e, param1="A": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D, "<Enter>",
-                                     lambda e, param1="D": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D_text, "<Enter>",
-                                     lambda e, param1="D": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D, "<Leave>",
-                                     lambda e, param1="D": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_D_text, "<Leave>",
-                                     lambda e, param1="D": self.on_stop_hover(e, param1))
-        elif answer == "D":
-            if self.currently_clicked == "D":
-                if self.correct_time():
-                    self.reset_audio_event()
-                    self.reset_channels()
-                    self.audio_channel_1 = self.audio_click_answer.play()
-                    self.unbind_all()
-                    self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#F75B11')
-                    self.canvas.itemconfig(self.question_button_D_text, fill='#ffffff')
-                    self.check_answer(answer)
-            else:
-                self.currently_clicked = "D"
-                self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#4D5CDC')
-                self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_B, outline='#4D5CDC', fill='#080E43')
-                self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
-                self.canvas.tag_unbind(self.question_button_D, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_D_text, "<Enter>")
-                self.canvas.tag_unbind(self.question_button_D, "<Leave>")
-                self.canvas.tag_unbind(self.question_button_D_text, "<Leave>")
-                self.canvas.tag_bind(self.question_button_B, "<Enter>",
-                                     lambda e, param1="B": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B_text, "<Enter>",
-                                     lambda e, param1="B": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B, "<Leave>",
-                                     lambda e, param1="B": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_B_text, "<Leave>",
-                                     lambda e, param1="B": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C, "<Enter>",
-                                     lambda e, param1="C": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C_text, "<Enter>",
-                                     lambda e, param1="C": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C, "<Leave>",
-                                     lambda e, param1="C": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_C_text, "<Leave>",
-                                     lambda e, param1="C": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A, "<Enter>",
-                                     lambda e, param1="A": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A_text, "<Enter>",
-                                     lambda e, param1="A": self.on_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A, "<Leave>",
-                                     lambda e, param1="A": self.on_stop_hover(e, param1))
-                self.canvas.tag_bind(self.question_button_A_text, "<Leave>",
-                                     lambda e, param1="A": self.on_stop_hover(e, param1))
-        else:
+        if answer not in "ABCD":
             print("Bad argument - button")
+            return
+
+        button_config = {
+            "A": (self.question_buttons['A']['button'], self.question_buttons['A']['button_text']),
+            "B": (self.question_buttons['B']['button'], self.question_buttons['B']['button_text']),
+            "C": (self.question_buttons['C']['button'], self.question_buttons['C']['button_text']),
+            "D": (self.question_buttons['D']['button'], self.question_buttons['D']['button_text']),
+        }
+
+        # Perform actions based on the answer
+        if self.currently_clicked == answer:
+            if self.correct_time():
+                self.handle_correct_answer(answer, button_config)
+        else:
+            self.currently_clicked = answer
+            self.update_button_states(answer, button_config)
+            self.bind_hover_events(button_config, answer)
+
+    def handle_correct_answer(self, answer, button_config):
+        self.reset_audio_event()
+        self.reset_channels()
+        self.audio_channel_1 = AUDIO_CLICK_ANSWER.play()
+        self.unbind_all_question_buttons()
+        button, text = button_config[answer]
+        self.canvas.itemconfig(button, outline='#080E43', fill='#F75B11')
+        self.canvas.itemconfig(text, fill='#ffffff')
+        self.check_answer(answer)
+
+    def update_button_states(self, answer, button_config):
+        for key, (button, text) in button_config.items():
+            if key == answer:
+                self.canvas.itemconfig(button, outline='#080E43', fill='#4D5CDC')
+            else:
+                self.canvas.itemconfig(button, outline='#4D5CDC', fill='#080E43')
+
+    def bind_hover_events(self, button_config, answer):
+        for key, (button, text) in button_config.items():
+            if key != answer:
+                self.canvas.tag_unbind(button, "<Enter>")
+                self.canvas.tag_unbind(text, "<Enter>")
+                self.canvas.tag_unbind(button, "<Leave>")
+                self.canvas.tag_unbind(text, "<Leave>")
+                self.canvas.tag_bind(button, "<Enter>",
+                                     lambda e, param1=key: self.on_hover(e, param1))
+                self.canvas.tag_bind(text, "<Enter>",
+                                     lambda e, param1=key: self.on_hover(e, param1))
+                self.canvas.tag_bind(button, "<Leave>",
+                                     lambda e, param1=key: self.on_stop_hover(e, param1))
+                self.canvas.tag_bind(text, "<Leave>",
+                                     lambda e, param1=key: self.on_stop_hover(e, param1))
 
     def create_prize_buttons(self):
         start_button_width = 180
@@ -1025,12 +847,7 @@ class Game:
         y2 = self.canvas.winfo_screenheight() * 19 / 20 + start_button_height / 2
         y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20
 
-        prize_values = ["0 zł", "100 zł", "200 zł", "300 zł", "500 zł", "1000 zł", "2000 zł", "5000 zł", "10 000 zł",
-                        "20 000 zł", "40 000 zł", "75 000 zł", "125 000 zł", "250 000 zł", "500 000 zł",
-                        "1 000 000 zł"]
-        text_colors = ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"]
-
-        for prize_value, text_color in zip(prize_values, text_colors):
+        for prize_value, text_color in zip(PRIZE_VALUES, TEXT_COLORS):
             prize_button = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                       outline='#4D5CDC', fill='#080E43', width=0)
             prize_button_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
@@ -1045,9 +862,9 @@ class Game:
         if self.current_question_number != 14:
             self.current_question_number = self.current_question_number + 1
             print(self.current_question_number)
-            self.current_money = self.question_prize_list[self.current_question_number]
+            self.current_money = QUESTION_PRIZE_LIST[self.current_question_number]
             print(f"Masz aktualnie: {self.current_money}")
-            if self.current_money in self.guaranteed_list:
+            if self.current_money in GUARANTEED_LIST:
                 self.guaranteed = self.current_money
             self.update_prize_buttons()
         else:
@@ -1063,24 +880,30 @@ class Game:
 
     def load_new_question(self):
         self.time_of_load = time_ns() / 1000000
-        prize = self.question_prize_list[self.current_question_number + 1]
+        prize = QUESTION_PRIZE_LIST[self.current_question_number + 1]
         print(prize)
         self.current_question = self.pick_random_question(prize)
         print("New question loaded")
-
-        self.canvas.itemconfigure(self.question_button_Q_text,
-                                  text=cut_question(f"{self.current_question.question}", width=85))
-        self.canvas.itemconfigure(self.question_button_A_text,
-                                  text=cut_question(f"{self.current_question.answer_A}", width=38))
-        self.canvas.itemconfigure(self.question_button_B_text,
-                                  text=cut_question(f"{self.current_question.answer_B}", width=38))
-        self.canvas.itemconfigure(self.question_button_C_text,
-                                  text=cut_question(f"{self.current_question.answer_C}", width=38))
-        self.canvas.itemconfigure(self.question_button_D_text,
-                                  text=cut_question(f"{self.current_question.answer_D}", width=38))
+        # Update question and answers
+        self.update_question_texts()
+        # Ban question category
         self.ban_question_category(self.current_question.category)
-
         print(self.current_question.question)
+
+    def update_question_texts(self):
+        # Update the question text
+        self.canvas.itemconfigure(self.question_buttons['Q']['button_text'],
+                                  text=cut_question(self.current_question.question, width=85))
+        # Update answer texts using a loop
+        answers = [
+            (self.question_buttons['A']['button_text'], self.current_question.answer_A),
+            (self.question_buttons['B']['button_text'], self.current_question.answer_B),
+            (self.question_buttons['C']['button_text'], self.current_question.answer_C),
+            (self.question_buttons['D']['button_text'], self.current_question.answer_D)
+        ]
+
+        for text_widget, answer in answers:
+            self.canvas.itemconfigure(text_widget, text=cut_question(answer, width=38))
 
     def ban_question_category(self, category):
         self.banned_categories.append(category)
@@ -1119,34 +942,34 @@ class Game:
         # remove from current question list in case of question swap
 
     def on_hover(self, event, button):
-        if button == "A":
-            self.canvas.itemconfig(self.question_button_A, outline='#080E43', fill='#4D5CDC')
-        elif button == "B":
-            self.canvas.itemconfig(self.question_button_B, outline='#080E43', fill='#4D5CDC')
-        elif button == "C":
-            self.canvas.itemconfig(self.question_button_C, outline='#080E43', fill='#4D5CDC')
-        elif button == "D":
-            self.canvas.itemconfig(self.question_button_D, outline='#080E43', fill='#4D5CDC')
-        elif button == "start":
-            self.canvas.itemconfig(self.timer_start_button, outline='#080E43', fill='#4D5CDC')
-        elif button == "stop":
-            self.canvas.itemconfig(self.timer_stop_button, outline='#080E43', fill='#4D5CDC')
+        button_styles = {
+            "A": (self.question_buttons['A']['button'], '#4D5CDC'),
+            "B": (self.question_buttons['B']['button'], '#4D5CDC'),
+            "C": (self.question_buttons['C']['button'], '#4D5CDC'),
+            "D": (self.question_buttons['D']['button'], '#4D5CDC'),
+            "start": (self.timer_start_button, '#4D5CDC'),
+            "stop": (self.timer_stop_button, '#4D5CDC')
+        }
+
+        if button in button_styles:
+            widget, fill_color = button_styles[button]
+            self.canvas.itemconfig(widget, outline='#080E43', fill=fill_color)
         else:
             print("Bad argument - button")
 
     def on_stop_hover(self, event, button):
-        if button == "A":
-            self.canvas.itemconfig(self.question_button_A, outline='#4D5CDC', fill='#080E43')
-        elif button == "B":
-            self.canvas.itemconfig(self.question_button_B, outline='#4D5CDC', fill='#080E43')
-        elif button == "C":
-            self.canvas.itemconfig(self.question_button_C, outline='#4D5CDC', fill='#080E43')
-        elif button == "D":
-            self.canvas.itemconfig(self.question_button_D, outline='#4D5CDC', fill='#080E43')
-        elif button == "start":
-            self.canvas.itemconfig(self.timer_start_button, outline='#4D5CDC', fill='#080E43')
-        elif button == "stop":
-            self.canvas.itemconfig(self.timer_stop_button, outline='#4D5CDC', fill='#080E43')
+        button_styles = {
+            "A": (self.question_buttons['A']['button'], '#080E43'),
+            "B": (self.question_buttons['B']['button'], '#080E43'),
+            "C": (self.question_buttons['C']['button'], '#080E43'),
+            "D": (self.question_buttons['D']['button'], '#080E43'),
+            "start": (self.timer_start_button, '#080E43'),
+            "stop": (self.timer_stop_button, '#080E43')
+        }
+
+        if button in button_styles:
+            widget, fill_color = button_styles[button]
+            self.canvas.itemconfig(widget, outline='#4D5CDC', fill=fill_color)
         else:
             print("Bad argument - button")
 
@@ -1166,7 +989,7 @@ class Question:
 def pick_top_results(num):
     data = []
     if os.path.exists("data/wyniki.txt"):
-        with open("data/wyniki.txt", 'r') as file:
+        with open("data/wyniki.txt", 'r', encoding="utf-8") as file:
             for line in file:
                 print(line)
                 print(line.strip().split(', '))
@@ -1193,6 +1016,7 @@ def substract_leader_padding(y1, y2, y3, y4, leader_padding):
 class Menu:
     def __init__(self):
         self.root = tk.Tk()
+        self.nickname = "Gość"
         self.background_image = None
         self.start_button = None
         self.start_button_text = None
@@ -1237,7 +1061,6 @@ class Menu:
         self.leader_button_text10 = None
         self.leader_button_number10 = None
 
-        pygame.mixer.init()
 
     def end_fullscreen(self, event):
         self.root.attributes('-fullscreen', False)
@@ -1318,11 +1141,11 @@ class Menu:
         button_width = 200
         button_height = 70
         button_edge = 20
-        padding = 5
         leader_padding = 75
         text_padding = 130
         to_right = 15
 
+        # Initial coordinate calculations
         x1 = self.canvas.winfo_screenwidth() / 100 * 92 - button_width / 2
         x2 = self.canvas.winfo_screenwidth() / 100 * 92 + button_width / 2
         x3 = x1 - button_edge
@@ -1331,55 +1154,30 @@ class Menu:
         y2 = self.canvas.winfo_screenheight() * 19 / 20 + button_height / 2 - 20
         y3 = y4 = self.canvas.winfo_screenheight() * 19 / 20 - 20
 
-        x1 = x1 - 100
-        x3 = x3 - 100
+        x1 -= 100
+        x3 -= 100
 
-        self.leader_button10, self.leader_button_text10, self.leader_button_number10 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 10)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
+        # Create leaderboard buttons and texts
+        for number in range(10, 0, -1):
+            polygon, button_text, button_number = self.create_polygons_and_text(
+                x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, number
+            )
+            setattr(self, f'leader_button{number}', polygon)
+            setattr(self, f'leader_button_text{number}', button_text)
+            setattr(self, f'leader_button_number{number}', button_number)
+            y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
 
-        self.leader_button9, self.leader_button_text9, self.leader_button_number9 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 9)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button8, self.leader_button_text8, self.leader_button_number8 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 8)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button7, self.leader_button_text7, self.leader_button_number7 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 7)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button6, self.leader_button_text6, self.leader_button_number6 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 6)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button5, self.leader_button_text5, self.leader_button_number5 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 5)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button4, self.leader_button_text4, self.leader_button_number4 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 4)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button3, self.leader_button_text3, self.leader_button_number3 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 3)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button2, self.leader_button_text2, self.leader_button_number2 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 2)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button1, self.leader_button_text1, self.leader_button_number1 = self.create_polygons_and_text(
-            x1, x2, x3, x4, y1, y2, y3, y4, text_padding, to_right, 1)
-        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, leader_padding)
-
-        self.leader_button = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
-                                                        outline='#4D5CDC', fill='#080E43', width=0)
-        self.leader_button_text = self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2,
-                                                          text="RANKING",
-                                                          font='Helvetica 15 bold',
-                                                          fill="white")
+        # Create the "RANKING" button
+        self.leader_button = self.canvas.create_polygon(
+            [x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
+            outline='#4D5CDC', fill='#080E43', width=0
+        )
+        self.leader_button_text = self.canvas.create_text(
+            (x1 + x2) / 2, (y1 + y2) / 2,
+            text="RANKING",
+            font='Helvetica 15 bold',
+            fill="white"
+        )
 
     def start_menu(self):
         self.root.title("Milionerzy")
@@ -1426,12 +1224,17 @@ class Menu:
                                                          font='Helvetica 26 bold',
                                                          fill="white")
 
-        self.canvas.tag_bind(self.start_button, "<ButtonRelease-1>", self.start_game)
-        self.canvas.tag_bind(self.start_button_text, "<ButtonRelease-1>", self.start_game)
-        self.canvas.tag_bind(self.start_button, "<Enter>", self.on_hover)
-        self.canvas.tag_bind(self.start_button_text, "<Enter>", self.on_hover)
-        self.canvas.tag_bind(self.start_button, "<Leave>", self.on_stop_hover)
-        self.canvas.tag_bind(self.start_button_text, "<Leave>", self.on_stop_hover)
+        self.bind_menu_item_events(self.start_button, "start")
+        self.bind_menu_item_events(self.start_button_text, "start")
+
+        # Create other menu options
+        self.create_menu_options()
+
+        # Bind events for save entry and exit button
+        self.bind_menu_item_events(self.save_entry, "save")
+        self.bind_menu_item_events(self.save_entry_text, "save")
+        self.bind_menu_item_events(self.exit, "exit")
+        self.bind_menu_item_events(self.exit_text, "exit")
 
         self.menu_frame = tk.Frame(self.canvas, background="#080E43")
         self.menu_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
@@ -1439,10 +1242,24 @@ class Menu:
 
         self.create_leaderboard()
         self.load_leaderboard()
-        self.create_menu_options()
 
         pygame.mixer.music.load("audio/menu.wav")
         pygame.mixer.music.play(loops=-1, fade_ms=1000)
+
+    def bind_menu_item_events(self, item, param):
+        """Bind events for a menu item, checking if item is valid first."""
+        if not item:
+            return
+
+        # Bind mouse click, enter, and leave events
+        events = {
+            "<ButtonRelease-1>": lambda e, p=param: self.on_menu_item_click(e, p),
+            "<Enter>": lambda e, p=param: self.on_menu_item_hover(e, p),
+            "<Leave>": lambda e, p=param: self.on_menu_item_stop_hover(e, p),
+        }
+
+        for event, handler in events.items():
+            self.canvas.tag_bind(item, event, handler)
 
     def mainloop(self):
         self.root.mainloop()
@@ -1451,7 +1268,7 @@ class Menu:
         print("Game started")
         # Hide the menu frame
         self.menu_frame.pack_forget()
-        game = Game("Test", self.canvas, self.root, self.canvas, self.leader_button_text1,
+        game = Game(self, self.nickname, self.canvas, self.root, self.canvas, self.leader_button_text1,
                     self.leader_button_text2, self.leader_button_text3, self.leader_button_text4,
                     self.leader_button_text5, self.leader_button_text6, self.leader_button_text7,
                     self.leader_button_text8, self.leader_button_text9, self.leader_button_text10)
@@ -1461,39 +1278,49 @@ class Menu:
         game.load_new_question()
 
     def load_leaderboard(self):
-        top_ten = pick_top_results(10)
-        if top_ten[0][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text1, text=f"{top_ten[0][0]} - {top_ten[0][1]}")
-        if top_ten[1][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text2, text=f"{top_ten[1][0]} - {top_ten[1][1]}")
-        if top_ten[2][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text3, text=f"{top_ten[2][0]} - {top_ten[2][1]}")
-        if top_ten[3][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text4, text=f"{top_ten[3][0]} - {top_ten[3][1]}")
-        if top_ten[4][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text5, text=f"{top_ten[4][0]} - {top_ten[4][1]}")
-        if top_ten[5][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text6, text=f"{top_ten[5][0]} - {top_ten[5][1]}")
-        if top_ten[6][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text7, text=f"{top_ten[6][0]} - {top_ten[6][1]}")
-        if top_ten[7][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text8, text=f"{top_ten[7][0]} - {top_ten[7][1]}")
-        if top_ten[8][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text9, text=f"{top_ten[8][0]} - {top_ten[8][1]}")
-        if top_ten[9][0] is not None:
-            self.canvas.itemconfig(self.leader_button_text10, text=f"{top_ten[9][0]} - {top_ten[9][1]}")
+        number_of_results = 10
+        top_ten = pick_top_results(number_of_results)
+        buttons = [self.leader_button_text1, self.leader_button_text2, self.leader_button_text3,
+                   self.leader_button_text4, self.leader_button_text5, self.leader_button_text6,
+                   self.leader_button_text7, self.leader_button_text8, self.leader_button_text9,
+                   self.leader_button_text10]
+        self.update_top_results(number_of_results, buttons, top_ten)
 
-    def on_hover(self, event):
-        self.canvas.itemconfig(self.start_button, outline='#080E43', fill='#4D5CDC')
+    def update_top_results(self, number, buttons, top_results):
+        for i in range(number):
+            if top_results[i][0] is not None:
+                self.canvas.itemconfig(buttons[i], text=f"{top_results[i][0]} - {top_results[i][1]}")
 
-    def on_stop_hover(self, event):
-        self.canvas.itemconfig(self.start_button, outline='#4D5CDC', fill='#080E43')
+    def on_menu_item_click(self, event, menu_item):
+        if menu_item == "start":
+            self.start_game(self.nickname)
+        elif menu_item == "exit":
+            exit(0)
+        elif menu_item == "save":
+            self.nickname = self.entry.get()
+
+    def on_menu_item_hover(self, event, menu_item):
+        if menu_item == "start":
+            self.canvas.itemconfig(self.start_button, outline='#080E43', fill='#4D5CDC')
+        elif menu_item == "exit":
+            self.canvas.itemconfig(self.exit, outline='#080E43', fill='#4D5CDC')
+        elif menu_item == "save":
+            self.canvas.itemconfig(self.save_entry, outline='#080E43', fill='#4D5CDC')
+
+    def on_menu_item_stop_hover(self, event, menu_item):
+        if menu_item == "start":
+            self.canvas.itemconfig(self.start_button, outline='#4D5CDC', fill='#080E43')
+        elif menu_item == "exit":
+            self.canvas.itemconfig(self.exit, outline='#4D5CDC', fill='#080E43')
+        elif menu_item == "save":
+            self.canvas.itemconfig(self.save_entry, outline='#4D5CDC', fill='#080E43')
 
 
 def main():
     menu = Menu()
     menu.start_menu()
     menu.mainloop()
+
 
 if __name__ == '__main__':
     main()
