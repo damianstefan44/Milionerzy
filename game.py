@@ -705,6 +705,7 @@ class Game:
         print("New question loaded")
         # Update question and answers
         self.update_question_texts()
+        self.add_to_already_asked(self.current_question)
         # Ban question category
         self.ban_question_category(self.current_question.category)
         print(self.current_question.question)
