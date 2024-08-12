@@ -1,5 +1,5 @@
 # Milionerzy
-Gra "Milionerzy" napisana w języku Python głównie w tkinterze oraz z pomocą pygame.
+Gra "Milionerzy" napisana w języku Python(3.9) głównie w tkinterze oraz z pomocą pygame.
 
 ## Instrukcja
 1. Zainstaluj wszystkie potrzebne biblioteki opisane w requirements.txt
