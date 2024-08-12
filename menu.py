@@ -47,7 +47,6 @@ class Menu:
         button_width = 200
         button_height = 70
         button_edge = 20
-        padding = 5
         leader_padding = 75
         text_padding = 130
         to_right = 100
@@ -71,10 +70,7 @@ class Menu:
                                                  fill="white",
                                                  anchor='w')
 
-        y1 -= 9 * leader_padding
-        y2 -= 9 * leader_padding
-        y3 -= 9 * leader_padding
-        y4 -= 9 * leader_padding
+        y1, y2, y3, y4 = substract_leader_padding(y1, y2, y3, y4, 9 * leader_padding)
 
         self.save_entry = self.canvas.create_polygon([x3, y3, x1, y1, x2, y1, x4, y4, x2, y2, x1, y2],
                                                      outline='#4D5CDC', fill='#080E43', width=0)
