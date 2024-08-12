@@ -54,8 +54,10 @@ def pick_top_results(num):
         top_list += [(None, None, None)] * (num - len(top_list))
 
         return top_list
-
-    return [(None, None, None)] * 5
+    else:
+        with open("data/wyniki.txt", 'w+', encoding="utf-8") as _:
+            print("Stworzono plik wyniki.txt")
+    return [(None, None, None)] * num
 
 
 def substract_leader_padding(y1, y2, y3, y4, leader_padding):
