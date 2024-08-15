@@ -16,7 +16,8 @@ Gra "Milionerzy" napisana w języku Python.
 2. Do poprawnego działania gry wymagane jest istnienie plików data/already_asked.xlsx oraz data/questions.xlsx w poprawnym formacie (tak jak są dodane na repozytorium)
 3. Większość przycisków reaguje na podwójne kliknięcie - w miejscach, w których pojedyncze kliknięcie mogłoby być przypadkowe, wyjątkiem jest np przycisk zapisu nazwy gracza oraz przycisk wyjścia w głównym menu.
 4. W celu poprawnego działania programu należy odczekać kilka sekund po wyświetleniu pytania zanim zaznaczy się odpowiedź - przy zbyt szybkim klikaniu nie działa poprawnie obsługa muzyki, przez co doświadczenia związane z grą nie będą kompletne.
-5. Koła ratunkowe to: Telefon do specjalisty(Członek rodziny), 50/50 - eliminujące dwie losowe niepoprawne odpowiedzi, Telefon do przyjaciela, Zamiana pytania. W przypadku kół ratunkowych związanych z dzwonieniem jest dodana funkcjonalność odmierzania czasu, który należy włączyć, kiedy zaczyna czytać się pytanie, gdy czas się skończy połączenie powinno zostać zerwane. Zakłada się, że grę prowadzi osoba - a'la prowadzący teleturniej i to ta osoba obsługuje jej interfejs, czyta pytania, obsługuje koła ratunkowe związane z telefonami itp.
+5. Koła ratunkowe to: Telefon do specjalisty(Członek rodziny), 50/50 - eliminujące dwie losowe niepoprawne odpowiedzi, Telefon do przyjaciela, Zamiana pytania. W przypadku kół ratunkowych związanych z dzwonieniem jest dodana funkcjonalność odmierzania czasu, który należy włączyć, kiedy zaczyna czytać się pytanie, gdy czas się skończy połączenie powinno zostać zerwane.
+6. Zakłada się, że grę prowadzi osoba - a'la prowadzący teleturnieju i to ta osoba obsługuje jej interfejs, czyta pytania, obsługuje koła ratunkowe związane z telefonami itp.
 
 ### Widok menu:
 ![menu](https://github.com/damianstefan44/Milionerzy/assets/56561841/dbc9b97d-9e28-4bbd-ad24-fbed26605250)
