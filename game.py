@@ -1,3 +1,5 @@
+import os
+
 import pygame.mixer
 import tkinter as tk
 from PIL import ImageTk, Image
@@ -17,17 +19,17 @@ PRIZE_VALUES = ["0 zł", "100 zł", "200 zł", "300 zł", "500 zł", "1000 zł",
 TEXT_COLORS = ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"] + ["orange"] * 4 + ["white"]
 
 pygame.mixer.init()
-AUDIO_NEXT_QUESTION = pygame.mixer.Sound("audio/next_question.wav")
-AUDIO_BACKGROUND = pygame.mixer.Sound("audio/background1.wav")
-AUDIO_MENU = pygame.mixer.Sound("audio/menu.wav")
-AUDIO_WRONG_ANSWER = pygame.mixer.Sound("audio/wrong_answer.wav")
-AUDIO_RIGHT_ANSWER = pygame.mixer.Sound("audio/right_answer.wav")
-AUDIO_RIGHT_ANSWER_GUARANTEED = pygame.mixer.Sound("audio/right_answer_guaranteed.wav")
-AUDIO_MILLION = pygame.mixer.Sound("audio/million.wav")
-AUDIO_PHONE = pygame.mixer.Sound("audio/phone.wav")
-AUDIO_END_PRIZE = pygame.mixer.Sound("audio/end_prize.wav")
-AUDIO_CLICK_ANSWER = pygame.mixer.Sound("audio/click_answer.wav")
-AUDIO_LIFELINE = pygame.mixer.Sound("audio/lifeline.wav")
+AUDIO_NEXT_QUESTION = pygame.mixer.Sound(f"audio{os.path.sep}next_question.wav")
+AUDIO_BACKGROUND = pygame.mixer.Sound(f"audio{os.path.sep}background1.wav")
+AUDIO_MENU = pygame.mixer.Sound(f"audio{os.path.sep}menu.wav")
+AUDIO_WRONG_ANSWER = pygame.mixer.Sound(f"audio{os.path.sep}wrong_answer.wav")
+AUDIO_RIGHT_ANSWER = pygame.mixer.Sound(f"audio{os.path.sep}right_answer.wav")
+AUDIO_RIGHT_ANSWER_GUARANTEED = pygame.mixer.Sound(f"audio{os.path.sep}right_answer_guaranteed.wav")
+AUDIO_MILLION = pygame.mixer.Sound(f"audio{os.path.sep}million.wav")
+AUDIO_PHONE = pygame.mixer.Sound(f"audio{os.path.sep}phone.wav")
+AUDIO_END_PRIZE = pygame.mixer.Sound(f"audio{os.path.sep}end_prize.wav")
+AUDIO_CLICK_ANSWER = pygame.mixer.Sound(f"audio{os.path.sep}click_answer.wav")
+AUDIO_LIFELINE = pygame.mixer.Sound(f"audio{os.path.sep}lifeline.wav")
 
 
 class Game:
@@ -55,8 +57,8 @@ class Game:
         self.current_money = 0
         self.guaranteed = 0
         self.question_list = []
-        self.questions_path = 'data/questions2.xlsx'
-        self.already_asked_path = 'data/already_asked.xlsx'
+        self.questions_path = f'data{os.path.sep}questions.xlsx'
+        self.already_asked_path = f'data{os.path.sep}already_asked.xlsx'
         self.current_question = None
         self.currently_clicked = None
         self.timer_time_left = 0
@@ -134,21 +136,21 @@ class Game:
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
         # Load and set background image
-        self.set_background_image("photos/milionerzy_studio3.png")
+        self.set_background_image(f"photos{os.path.sep}milionerzy_studio3.png")
 
         # Create black rectangle
         self.create_black_rectangle(200)
 
         # Define lifelines and their positions
         lifelines_info = [
-            {"name": "specialist", "image": "photos/lifeline_specialist_black.png", "y_offset": 50},
-            {"name": "50", "image": "photos/lifeline_50_black.png",
+            {"name": "specialist", "image": f"photos{os.path.sep}lifeline_specialist_black.png", "y_offset": 50},
+            {"name": "50", "image": f"photos{os.path.sep}lifeline_50_black.png",
              "y_offset": self.root.winfo_screenheight() / 6 + 50},
-            {"name": "phone", "image": "photos/lifeline_phone_black.png",
+            {"name": "phone", "image": f"photos{os.path.sep}lifeline_phone_black.png",
              "y_offset": 2 * self.root.winfo_screenheight() / 6 + 50},
-            {"name": "swap", "image": "photos/lifeline_swap_black.png",
+            {"name": "swap", "image": f"photos{os.path.sep}lifeline_swap_black.png",
              "y_offset": 3 * self.root.winfo_screenheight() / 6 + 50},
-            {"name": "exit", "image": "photos/lifeline_exit_black.png",
+            {"name": "exit", "image": f"photos{os.path.sep}lifeline_exit_black.png",
              "y_offset": self.root.winfo_screenheight() - 150},
         ]
 
@@ -179,7 +181,7 @@ class Game:
 
     def update_lifeline_image(self, lifeline, color):
         """Helper method to update lifeline image based on hover state."""
-        image_path = f"photos/lifeline_{lifeline}_{color}.png"
+        image_path = f"photos{os.path.sep}lifeline_{lifeline}_{color}.png"
         lifeline_image = functions.load_image(image_path)
         self.canvas.itemconfig(self.lifelines[lifeline]['button'], image=lifeline_image)
         self.lifelines[lifeline]['image'] = lifeline_image
@@ -221,7 +223,7 @@ class Game:
 
     def on_lifeline_click(self, event, lifeline):
         if not self.answer_clicked and not self.start_button_clicked:
-            image_path = f"photos/lifeline_{lifeline}_red.png"
+            image_path = f"photos{os.path.sep}lifeline_{lifeline}_red.png"
             lifeline_image = functions.load_image(image_path)
             if lifeline in self.lifelines:
                 self.update_lifeline(lifeline, lifeline_image)
@@ -354,12 +356,12 @@ class Game:
         self.save_result()
 
     def save_result(self):
-        f = open("data/wyniki.txt", "a", encoding="utf-8")
+        f = open(f"data{os.path.sep}wyniki.txt", "a", encoding="utf-8")
         current_time = int(time_ns() / 1000000)
         f.write(f"{self.nickname}, {self.end_prize}, {current_time}\n")
 
     def end_game(self):
-        print("Game has ended")
+        print("Koniec gry")
         if self.bad_answer:
             self.end_prize = self.guaranteed
         else:
@@ -386,7 +388,7 @@ class Game:
         self.reset_channels()
         self.menu.load_leaderboard()
 
-        pygame.mixer.music.load("audio/menu.wav")
+        pygame.mixer.music.load(f"audio{os.path.sep}menu.wav")
         pygame.mixer.music.play(loops=-1, fade_ms=1000)
 
     def create_question_button(self, name, x1, x2, x3, x4, y1, y2, y3, y4, to_left, answer_text_padding, left_padding):
@@ -702,7 +704,7 @@ class Game:
         prize = QUESTION_PRIZE_LIST[self.current_question_number + 1]
         print(prize)
         self.current_question = self.pick_random_question(prize)
-        print("New question loaded")
+        print("Nowe pytanie:")
         # Update question and answers
         self.update_question_texts()
         self.add_to_already_asked(self.current_question)

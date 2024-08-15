@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from PIL import ImageTk, Image
 from functions import substract_leader_padding, pick_top_results
@@ -159,7 +160,7 @@ class Menu:
         self.canvas.pack(fill=tk.BOTH,
                          expand=True)
 
-        image = Image.open("photos/milionerzy2.png")
+        image = Image.open(f"photos{os.path.sep}milionerzy2.png")
         resized_image = image.resize((self.root.winfo_screenwidth(), self.root.winfo_screenheight()))
         self.background_image = ImageTk.PhotoImage(resized_image)
 
@@ -207,7 +208,7 @@ class Menu:
         self.create_leaderboard()
         self.load_leaderboard()
 
-        pygame.mixer.music.load("audio/menu.wav")
+        pygame.mixer.music.load(f"audio{os.path.sep}menu.wav")
         pygame.mixer.music.play(loops=-1, fade_ms=1000)
 
     def bind_menu_item_events(self, item, param):
@@ -229,7 +230,7 @@ class Menu:
         self.root.mainloop()
 
     def start_game(self, event):
-        print("Game started")
+        print("Startuje grę")
         # Hide the menu frame
         self.menu_frame.pack_forget()
         game = Game(self, self.nickname, self.canvas, self.root, self.canvas)

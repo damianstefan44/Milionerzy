@@ -42,11 +42,9 @@ def load_image(image_path):
 
 def pick_top_results(num):
     data = []
-    if os.path.exists("data/wyniki.txt"):
-        with open("data/wyniki.txt", 'r', encoding="utf-8") as file:
+    if os.path.exists(f"data{os.path.sep}wyniki.txt"):
+        with open(f"data{os.path.sep}wyniki.txt", 'r', encoding="utf-8") as file:
             for line in file:
-                print(line)
-                print(line.strip().split(', '))
                 nickname, end_prize, timestamp = line.strip().split(', ')
                 data.append((nickname.strip(), int(end_prize.strip()), int(timestamp.strip())))
         sorted_data = sorted(data, key=itemgetter(1, 2), reverse=True)
@@ -55,7 +53,7 @@ def pick_top_results(num):
 
         return top_list
     else:
-        with open("data/wyniki.txt", 'w+', encoding="utf-8") as _:
+        with open(f"data{os.path.sep}wyniki.txt", 'w+', encoding="utf-8") as _:
             print("Stworzono plik wyniki.txt")
     return [(None, None, None)] * num
 
