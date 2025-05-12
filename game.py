@@ -56,7 +56,7 @@ class Game:
         self.current_money = 0
         self.guaranteed = 0
         self.question_list = []
-        self.questions_path = f'data{os.path.sep}questions2.xlsx'
+        self.questions_path = f'data{os.path.sep}questions.xlsx'
         self.already_asked_path = f'data{os.path.sep}already_asked.xlsx'
         self.current_question = None
         self.currently_clicked = None
@@ -764,7 +764,6 @@ class Game:
                 self.question_list.append(question)
 
     def add_to_already_asked(self, question):
-        print("Udaje ze dodaje do puli zadanych [DO ODKOMENTOWANIA FUNKCJA PO SPRAWDZENIACH]")
         excel_already_asked = pd.read_excel(self.already_asked_path, )
         question_df = pd.DataFrame({"question": [question.question]})
         merged_df = pd.concat([excel_already_asked, question_df], ignore_index=True)
