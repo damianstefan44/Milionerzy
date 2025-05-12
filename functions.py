@@ -4,6 +4,7 @@ from operator import itemgetter
 
 
 def cut_question(question, width=20):
+    question = str(question)
     # Split the question into lines
     lines = question.split('\n')
 

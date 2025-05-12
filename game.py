@@ -1,5 +1,4 @@
 import os
-
 import pygame.mixer
 import tkinter as tk
 from PIL import ImageTk, Image
@@ -57,7 +56,7 @@ class Game:
         self.current_money = 0
         self.guaranteed = 0
         self.question_list = []
-        self.questions_path = f'data{os.path.sep}questions.xlsx'
+        self.questions_path = f'data{os.path.sep}questions2.xlsx'
         self.already_asked_path = f'data{os.path.sep}already_asked.xlsx'
         self.current_question = None
         self.currently_clicked = None
@@ -365,19 +364,22 @@ class Game:
         if self.bad_answer:
             self.end_prize = self.guaranteed
         else:
-            self.end_prize = self.current_money
-        if self.end_prize != 1000:
+            if self.current_question_number == 14:
+                self.end_prize = 1000000
+            else:
+                self.end_prize = self.current_money
+        if self.end_prize != 1000000:
             self.reset_channels()
             self.audio_channel_1 = AUDIO_END_PRIZE.play()
             self.reset_phone_lifeline()
             self.root.after(2000, lambda: self.create_end_prize_text())
             self.root.after(8000, lambda: self.switch_to_menu())
         else:
-            self.reset_channels()
-            self.audio_channel_1 = AUDIO_MILLION.play()
+            # self.reset_channels()
+            # self.audio_channel_1 = AUDIO_MILLION.play()
             self.reset_phone_lifeline()
             self.root.after(2000, lambda: self.create_end_prize_text())
-            self.root.after(20000, lambda: self.switch_to_menu())
+            self.root.after(15000, lambda: self.switch_to_menu())
 
     def switch_to_menu(self):
         self.canvas.destroy()
@@ -525,6 +527,10 @@ class Game:
             self.load_new_question()
         else:
             print("Gratulację - wygrałeś MILION")
+            self.audio_channel_1.stop()
+            self.audio_channel_1 = AUDIO_MILLION.play()
+            self.root.after(8000, lambda: self.end_game())
+            #self.end_game()
 
     def reset_audio_event(self):
         if self.audio_event is not None:
@@ -537,10 +543,13 @@ class Game:
         self.root.after(3000, lambda: self.end_game())
 
     def play_right_answer(self):
-        if self.current_question_number in [4, 9, 14]:
+        if self.current_question_number in [4, 9]:
             self.audio_channel_1.stop()
             self.audio_channel_1 = AUDIO_RIGHT_ANSWER_GUARANTEED.play()
             self.root.after(5000, lambda: self.next_question())
+        elif self.current_question_number == 14:
+            self.audio_channel_1.stop()
+            self.next_question()
         else:
             self.audio_channel_1.stop()
             self.audio_channel_1 = AUDIO_RIGHT_ANSWER.play()
@@ -715,7 +724,7 @@ class Game:
     def update_question_texts(self):
         # Update the question text
         self.canvas.itemconfigure(self.question_buttons['Q']['button_text'],
-                                  text=functions.cut_question(self.current_question.question, width=85))
+                                  text=functions.cut_question(str(self.current_question.question), width=85))
         # Update answer texts using a loop
         answers = [
             (self.question_buttons['A']['button_text'], self.current_question.answer_A),
@@ -755,6 +764,7 @@ class Game:
                 self.question_list.append(question)
 
     def add_to_already_asked(self, question):
+        print("Udaje ze dodaje do puli zadanych [DO ODKOMENTOWANIA FUNKCJA PO SPRAWDZENIACH]")
         excel_already_asked = pd.read_excel(self.already_asked_path, )
         question_df = pd.DataFrame({"question": [question.question]})
         merged_df = pd.concat([excel_already_asked, question_df], ignore_index=True)
